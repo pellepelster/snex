@@ -26,7 +26,17 @@ func (snippets Snippets) GetSnippetIndex(id string) int {
 	return -1
 }
 
-func parseSnippets(content string) Snippets {
+func parseDocuments(contents []string) Snippets {
+	result := Snippets{}
+
+	for _, content := range contents {
+		result.snippets = append(result.snippets, parseDocument(content).snippets...)
+	}
+
+	return result
+}
+
+func parseDocument(content string) Snippets {
 
 	snippetStart := regexp.MustCompile(`snippet:([a-zA-Z0-9]*)`)
 	snippetEnd := regexp.MustCompile(`/snippet:([a-zA-Z0-9]*)`)

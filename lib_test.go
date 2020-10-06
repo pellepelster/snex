@@ -5,7 +5,37 @@ import (
 	"testing"
 )
 
-func TestParseOneSnippet(t *testing.T) {
+func TestParseDocumentsOneSnippet(t *testing.T) {
+
+	const s1 = `first line
+<!-- snippet:snippet1 -->
+snippet 1 content
+<!-- /snippet:snippet1 -->
+third line`
+
+	const s2 = `first line
+<!-- snippet:snippet2 -->
+snippet 2 content
+<!-- /snippet:snippet2 -->
+third line`
+
+	result := parseDocuments([]string{s1, s2})
+
+	assert.Equal(t, 2, len(result.snippets))
+	assert.Equal(t, -1, result.GetSnippetIndex("xxx"))
+
+	snippet1 := result.snippets[result.GetSnippetIndex("snippet1")]
+	assert.Equal(t, "snippet1", snippet1.id)
+	assert.Equal(t, 1, snippet1.start)
+	assert.Equal(t, 3, snippet1.end)
+
+	snippet2 := result.snippets[result.GetSnippetIndex("snippet2")]
+	assert.Equal(t, "snippet2", snippet2.id)
+	assert.Equal(t, 1, snippet2.start)
+	assert.Equal(t, 3, snippet2.end)
+}
+
+func TestParseDocumentOneSnippet(t *testing.T) {
 
 	const s = `first line
 <!-- snippet:snippet1 -->
@@ -13,7 +43,7 @@ second line
 <!-- /snippet:snippet1 -->
 third line`
 
-	result := parseSnippets(s)
+	result := parseDocument(s)
 
 	assert.Equal(t, 1, len(result.snippets))
 	assert.Equal(t, -1, result.GetSnippetIndex("xxx"))
@@ -24,7 +54,7 @@ third line`
 	assert.Equal(t, 3, snippet.end)
 }
 
-func TestParseTwoSnippets(t *testing.T) {
+func TestParseDocumentTwoSnippets(t *testing.T) {
 
 	const s = `first line
 <!-- snippet:snippet1 -->
@@ -37,7 +67,7 @@ snippet2 content
 <!-- /snippet:snippet2 -->
 last line`
 
-	result := parseSnippets(s)
+	result := parseDocument(s)
 
 	assert.Equal(t, 2, len(result.snippets))
 	assert.Equal(t, -1, result.GetSnippetIndex("xxx"))
@@ -53,14 +83,14 @@ last line`
 	assert.Equal(t, 7, snippet2.end)
 }
 
-func TestParseSnippetWithoutEnd(t *testing.T) {
+func TestParseDocumentSnippetWithoutEnd(t *testing.T) {
 
 	const s = `first line
 <!-- snippet:snippet1 -->
 second line
 third line`
 
-	result := parseSnippets(s)
+	result := parseDocument(s)
 
 	assert.Equal(t, 1, len(result.snippets))
 	assert.Equal(t, -1, result.GetSnippetIndex("xxx"))
@@ -71,14 +101,14 @@ third line`
 	assert.Equal(t, -1, snippet.end)
 }
 
-func TestParseSnippetWithoutStart(t *testing.T) {
+func TestParseDocumentSnippetWithoutStart(t *testing.T) {
 
 	const s = `first line
 second line
 <!-- /snippet:snippet1 -->
 third line`
 
-	result := parseSnippets(s)
+	result := parseDocument(s)
 
 	assert.Equal(t, 1, len(result.snippets))
 	assert.Equal(t, -1, result.GetSnippetIndex("xxx"))
