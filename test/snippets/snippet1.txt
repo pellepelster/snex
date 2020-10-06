@@ -1,0 +1,5 @@
+snippet 1.1
+<!-- snippet:snippet1 -->
+snippet 1 content
+<!-- /snippet:snippet1 -->
+snippet 1.2

@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestReplaceSnippets(t *testing.T) {
+func TestReplaceSnippetsWithSingleLineContent(t *testing.T) {
 
 	const snippets = `snippet first line
 <!-- snippet:snippet1 -->
@@ -16,6 +16,122 @@ snippet third line`
 	const input = `first line
 <!-- snippet:snippet1 -->
 zzz
+<!-- /snippet:snippet1 -->
+third line`
+
+	const expected = `first line
+<!-- snippet:snippet1 -->
+xxx
+<!-- /snippet:snippet1 -->
+third line`
+
+	assert.Equal(t, expected, replaceSnippets(input, parseDocument(snippets)))
+}
+
+func TestReplaceSnippetsWithMultipleLineContent(t *testing.T) {
+
+	const snippets = `snippet first line
+<!-- snippet:snippet1 -->
+xxx
+<!-- /snippet:snippet1 -->
+snippet third line`
+
+	const input = `first line
+<!-- snippet:snippet1 -->
+zzz1
+zzz2
+zzz3
+<!-- /snippet:snippet1 -->
+third line`
+
+	const expected = `first line
+<!-- snippet:snippet1 -->
+xxx
+<!-- /snippet:snippet1 -->
+third line`
+
+	assert.Equal(t, expected, replaceSnippets(input, parseDocument(snippets)))
+}
+
+func TestReplaceSnippetsWithMixedLineContent(t *testing.T) {
+
+	const snippets = `snippet first line
+<!-- snippet:snippet1 -->
+snippet 1 content
+<!-- /snippet:snippet1 -->
+line in between
+<!-- snippet:snippet2 -->
+snippet 2 content
+<!-- /snippet:snippet2 -->
+snippet third line`
+
+	const input = `first line
+<!-- snippet:snippet1 -->
+zzz1
+zzz2
+zzz3
+<!-- /snippet:snippet1 -->
+line in between
+<!-- snippet:snippet2 -->
+<!-- /snippet:snippet2 -->
+third line`
+
+	const expected = `first line
+<!-- snippet:snippet1 -->
+snippet 1 content
+<!-- /snippet:snippet1 -->
+line in between
+<!-- snippet:snippet2 -->
+snippet 2 content
+<!-- /snippet:snippet2 -->
+third line`
+
+	assert.Equal(t, expected, replaceSnippets(input, parseDocument(snippets)))
+}
+
+func TestReplaceSnippetsWithMixedLineContentNoSpaceInBetween(t *testing.T) {
+
+	const snippets = `snippet first line
+<!-- snippet:snippet1 -->
+snippet 1 content
+<!-- /snippet:snippet1 -->
+<!-- snippet:snippet2 -->
+snippet 2 content
+<!-- /snippet:snippet2 -->
+snippet third line`
+
+	const input = `first line
+<!-- snippet:snippet1 -->
+zzz1
+zzz2
+zzz3
+<!-- /snippet:snippet1 -->
+<!-- snippet:snippet2 -->
+<!-- /snippet:snippet2 -->
+third line`
+
+	const expected = `first line
+<!-- snippet:snippet1 -->
+snippet 1 content
+<!-- /snippet:snippet1 -->
+<!-- snippet:snippet2 -->
+snippet 2 content
+<!-- /snippet:snippet2 -->
+third line`
+
+	assert.Equal(t, expected, replaceSnippets(input, parseDocument(snippets)))
+}
+
+func TestReplaceSnippetsWithoutContent(t *testing.T) {
+
+	const snippets = `snippet first line
+<!-- snippet:snippet1 -->
+xxx
+<!-- /snippet:snippet1 -->
+snippet third line`
+
+	const input = `first line
+<!-- snippet:snippet1 -->
 <!-- /snippet:snippet1 -->
 third line`
 
