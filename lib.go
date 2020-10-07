@@ -34,30 +34,30 @@ func (snippets Snippets) GetSnippetIndex(id string) int {
 
 func replaceSnippets(content string, snippets Snippets) string {
 	originalLines := strings.Split(content, "\n")
-	lines := []string {}
+	lines := []string{}
 	snippetsToReplace := parseDocument(content)
 
 	for i := 0; i < len(snippetsToReplace.snippets); i++ {
 		snippet := snippetsToReplace.snippets[i]
 
 		isFirst := i == 0
-		prefix := []string {}
+		prefix := []string{}
 
 		if isFirst {
 			prefix = originalLines[:snippet.start+1]
 		} else {
 			lastSnippet := snippetsToReplace.snippets[i-1]
-			prefix = originalLines[lastSnippet.end+1: snippet.start+2]
+			prefix = originalLines[lastSnippet.end+1 : snippet.start+2]
 		}
 
-		isLast := !(i < len(snippetsToReplace.snippets) -1)
-		postfix := []string {}
+		isLast := !(i < len(snippetsToReplace.snippets)-1)
+		postfix := []string{}
 
 		if isLast {
 			postfix = originalLines[snippet.end+(i*1):]
 		} else {
 			//nextSnippet := snippetsToReplace.snippets[i+1]
-			postfix = originalLines[snippet.end: snippet.end+1]
+			postfix = originalLines[snippet.end : snippet.end+1]
 		}
 
 		lines = append(lines, prefix...)

@@ -189,7 +189,7 @@ third line`
 
 	snippet := result.snippets[result.GetSnippetIndex("snippet1")]
 	assert.Equal(t, "snippet1", snippet.id)
-	assert.Equal(t, []string { "snippet1 content" }, snippet.content)
+	assert.Equal(t, []string{"snippet1 content"}, snippet.content)
 	assert.Equal(t, 1, snippet.start)
 	assert.Equal(t, 3, snippet.end)
 }
@@ -215,13 +215,13 @@ last line`
 
 	snippet1 := result.snippets[result.GetSnippetIndex("snippet1")]
 	assert.Equal(t, "snippet1", snippet1.id)
-	assert.Equal(t, []string { "snippet1 content 1", "snippet1 content 2" }, snippet1.content)
+	assert.Equal(t, []string{"snippet1 content 1", "snippet1 content 2"}, snippet1.content)
 	assert.Equal(t, 1, snippet1.start)
 	assert.Equal(t, 4, snippet1.end)
 
 	snippet2 := result.snippets[result.GetSnippetIndex("snippet2")]
 	assert.Equal(t, "snippet2", snippet2.id)
-	assert.Equal(t, []string { "snippet2 content" }, snippet2.content)
+	assert.Equal(t, []string{"snippet2 content"}, snippet2.content)
 	assert.Equal(t, 6, snippet2.start)
 	assert.Equal(t, 8, snippet2.end)
 }
