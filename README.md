@@ -11,8 +11,8 @@ So assuming you are tasked with writing some documentation and want to ensure it
 
 How to assign names to variables:
 
-\<!--- snippet:snippet1 -->
-\<!--- /snippet:snippet1 -->
+<!--- snippet:snippet1 -->
+<!--- /snippet:snippet1 -->
 
 this is how you use strings in Java.
 
@@ -38,10 +38,10 @@ when you let `snex` run over you documentation it will replace the snippet marke
 
 How to assign names to variables:
 
-\<!--- snippet:snippet1 -->
+<!--- snippet:snippet1 -->
         var firstName = "Jens";
         var lastName = "Mander";
-\<!--- /snippet:snippet1 -->
+<!--- /snippet:snippet1 -->
 
 this is how you use strings in Java.
 
