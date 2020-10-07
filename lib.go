@@ -171,5 +171,5 @@ func fullPath(p string) string {
 		log.Fatal(err)
 	}
 
-	return path.Join(dir, p)
+	return strings.TrimRight(path.Join(dir, p), "/")
 }

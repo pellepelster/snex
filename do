@@ -21,6 +21,8 @@ function task_test {
     test_return_code 1 -snippets non_empty -source non_empty
     test_return_code 2 -source non_existing -target non_existing -snippets non_existing
     test_return_code 2 -source ./test/source -target non_existing -snippets non_existing
+    test_return_code 3 -source ${DIR}/test/source -target ${DIR}/test/snippets -snippets ${DIR}/test/snippets
+    test_return_code 3 -source ${DIR}/test/source -target ${DIR}/test/snippets/nested_folder -snippets ${DIR}/test/snippets
     test_return_code 0 -source ${DIR}/test/source -target ${DIR}/test/target -snippets ${DIR}/test/snippets
     diff "${DIR}/test/target" "${DIR}/test/expected"
 }

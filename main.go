@@ -49,6 +49,10 @@ func main() {
 		Fatalf(2, "snippets path '%s' not found\n", snippetsParameter)
 	}
 
+	if strings.HasPrefix(targetPath, snippetsPath) || strings.HasPrefix(snippetsPath, targetPath) {
+		Fatalf(3, "snippets path '%s' and target path '%s' are not distinct\n", snippetsPath, targetPath)
+	}
+
 	var allSnippets = Snippets{}
 
 	for _, file := range listAllFiles(snippetsPath) {
