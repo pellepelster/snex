@@ -2,12 +2,12 @@ package main
 
 import (
 	"flag"
+	"github.com/jpillora/longestcommon"
 	"io/ioutil"
 	"log"
 	"os"
 	"path"
 	"strings"
-	"github.com/jpillora/longestcommon"
 )
 
 func main() {
@@ -64,6 +64,7 @@ func main() {
 
 	for _, sourceFile := range listAllFiles(sourcePath) {
 		content, err := ioutil.ReadFile(sourceFile)
+
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -75,7 +76,7 @@ func main() {
 		log.Printf("rendering file '%s' to '%s'", sourceFile, targetFile)
 
 		os.MkdirAll(path.Dir(targetFile), os.ModePerm)
-		error := ioutil.WriteFile(targetFile, []byte(replaceSnippets(string(content), allSnippets)), 0700)
+		error := ioutil.WriteFile(targetFile, []byte(replaceSnippets(string(content), allSnippets)), 0644)
 		if error != nil {
 			log.Fatalf("%s", error)
 		}

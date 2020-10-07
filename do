@@ -12,13 +12,17 @@ function task_test {
     go test
     task_build
 
+    rm -rf "${DIR}/test/target"
+    mkdir -p "${DIR}/test/target"
+
     test_return_code 1
     test_return_code 1 -source non_empty -target non_empty
     test_return_code 1 -snippets non_empty -target non_empty
     test_return_code 1 -snippets non_empty -source non_empty
     test_return_code 2 -source non_existing -target non_existing -snippets non_existing
     test_return_code 2 -source ./test/source -target non_existing -snippets non_existing
-    test_return_code 0 -source ./test/source -target ./test/target -snippets ./test/snippets
+    test_return_code 0 -source ${DIR}/test/source -target ${DIR}/test/target -snippets ${DIR}/test/snippets
+    diff "${DIR}/test/target" "${DIR}/test/expected"
 }
 
 function test_return_code {
