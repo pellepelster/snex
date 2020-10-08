@@ -2,3 +2,4 @@
 snex
 test/target/
 vendor/
+test/single_source_inside_snippets_no_target/snippets/

@@ -10,6 +10,26 @@ import (
 	"strings"
 )
 
+func fileExists(filename string) bool {
+	info, err := os.Stat(filename)
+
+	if os.IsNotExist(err) {
+		return false
+	}
+
+	return !info.IsDir()
+}
+
+func dirExists(filename string) bool {
+	info, err := os.Stat(filename)
+
+	if os.IsNotExist(err) {
+		return false
+	}
+
+	return info.IsDir()
+}
+
 func main() {
 	var snippetsParameter string
 	flag.StringVar(&snippetsParameter, "snippets", "", "directory that contains all snippets/sources")
@@ -25,37 +45,43 @@ func main() {
 	if sourceParameter == "" {
 		Fatalf(1, "no source directory specified")
 	}
+	sourcePath := fullPath(sourceParameter)
 
 	if snippetsParameter == "" {
 		Fatalf(1, "no snippets directory specified")
 	}
+	snippetsPath := fullPath(snippetsParameter)
 
-	if targetParameter == "" {
+	if !fileExists(sourcePath) && targetParameter == "" {
 		Fatalf(1, "no target directory specified")
 	}
+	targetPath := fullPath(targetParameter)
 
-	sourcePath := fullPath(sourceParameter)
-	if _, err := os.Stat(sourcePath); os.IsNotExist(err) {
+
+	if !dirExists(sourcePath) && !fileExists(sourcePath) {
 		Fatalf(2, "source path '%s' not found\n", snippetsParameter)
 	}
 
-	targetPath := fullPath(targetParameter)
-	if _, err := os.Stat(targetPath); os.IsNotExist(err) {
+	if !dirExists(targetPath) && !fileExists(sourcePath) {
 		Fatalf(2, "target path '%s' not found\n", snippetsParameter)
 	}
 
-	snippetsPath := fullPath(snippetsParameter)
-	if _, err := os.Stat(snippetsPath); os.IsNotExist(err) {
+	if !dirExists(snippetsPath) {
 		Fatalf(2, "snippets path '%s' not found\n", snippetsParameter)
 	}
 
-	if strings.HasPrefix(targetPath, snippetsPath) || strings.HasPrefix(snippetsPath, targetPath) {
+	if !fileExists(sourcePath) && (strings.HasPrefix(targetPath, snippetsPath) || strings.HasPrefix(snippetsPath, targetPath)) {
 		Fatalf(3, "snippets path '%s' and target path '%s' are not distinct\n", snippetsPath, targetPath)
 	}
 
 	var allSnippets = Snippets{}
 
 	for _, file := range listAllFiles(snippetsPath) {
+
+		if sourcePath == file {
+			continue
+		}
+
 		content, err := ioutil.ReadFile(file)
 		if err != nil {
 			log.Fatal(err)
@@ -66,23 +92,31 @@ func main() {
 		allSnippets.snippets = append(allSnippets.snippets, snippets.snippets...)
 	}
 
-	for _, sourceFile := range listAllFiles(sourcePath) {
-		content, err := ioutil.ReadFile(sourceFile)
-
-		if err != nil {
-			log.Fatal(err)
+	if dirExists(sourcePath) {
+		for _, sourceFile := range listAllFiles(sourcePath) {
+			renderFile(sourceFile, targetPath, sourcePath, allSnippets)
 		}
+	} else {
+		renderFile(sourcePath, sourcePath, sourcePath, allSnippets)
+	}
+}
 
-		prefix := longestcommon.Prefix([]string{sourceFile, targetPath})
-		prefix = strings.TrimRight(prefix, "/")
+func renderFile(sourceFile string, targetPath string, sourcePath string, allSnippets Snippets) {
+	content, err := ioutil.ReadFile(sourceFile)
 
-		targetFile := path.Join(targetPath, strings.TrimPrefix(sourceFile, sourcePath))
-		log.Printf("rendering file '%s' to '%s'", sourceFile, targetFile)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-		os.MkdirAll(path.Dir(targetFile), os.ModePerm)
-		error := ioutil.WriteFile(targetFile, []byte(replaceSnippets(string(content), allSnippets)), 0644)
-		if error != nil {
-			log.Fatalf("%s", error)
-		}
+	prefix := longestcommon.Prefix([]string{sourceFile, targetPath})
+	prefix = strings.TrimRight(prefix, "/")
+
+	targetFile := path.Join(targetPath, strings.TrimPrefix(sourceFile, sourcePath))
+	log.Printf("rendering file '%s' to '%s'", sourceFile, targetFile)
+
+	os.MkdirAll(path.Dir(targetFile), os.ModePerm)
+	error := ioutil.WriteFile(targetFile, []byte(replaceSnippets(string(content), allSnippets)), 0644)
+	if error != nil {
+		log.Fatalf("%s", error)
 	}
 }

@@ -51,8 +51,18 @@ this is how you use strings in Java.
 
 ## Usage
 
+### Folder based
+
 ```shell script
 $ snex -source ./documentation -target ./output -snippets ./src
 ```
 
 where **source** is the directory containing the files to transform, **target** is the output directory containing the transformed files and **snippets** designates the directory containing the code samples
+
+### Single file based
+
+```shell script
+$ snex -source ./src/README.md -snippets ./src
+```
+
+if a single file is specified as **source** and no target is given the file is transformed in place, using the snippets found in **snippets**
