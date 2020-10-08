@@ -47,14 +47,14 @@ func replaceSnippets(content string, snippets Snippets) string {
 			prefix = originalLines[:snippet.start+1]
 		} else {
 			lastSnippet := snippetsToReplace.snippets[i-1]
-			prefix = originalLines[lastSnippet.end+1 : snippet.start+2]
+			prefix = originalLines[lastSnippet.end+1 : snippet.start+1]
 		}
 
 		isLast := !(i < len(snippetsToReplace.snippets)-1)
 		postfix := []string{}
 
 		if isLast {
-			postfix = originalLines[snippet.end+(i*1):]
+			postfix = originalLines[snippet.end:]
 		} else {
 			//nextSnippet := snippetsToReplace.snippets[i+1]
 			postfix = originalLines[snippet.end : snippet.end+1]
@@ -85,22 +85,23 @@ func parseDocuments(contents []string) Snippets {
 
 func parseDocument(content string) Snippets {
 
-	snippetStart := regexp.MustCompile(`snippet:([a-zA-Z0-9]*)`)
-	snippetEnd := regexp.MustCompile(`/snippet:([a-zA-Z0-9]*)`)
+	snippetStart := regexp.MustCompile(`snippet:([a-zA-Z0-9_-]*)`)
+	snippetEnd := regexp.MustCompile(`/snippet:([a-zA-Z0-9_-]*)`)
 
 	snippets := Snippets{}
 
 	scanner := bufio.NewScanner(strings.NewReader(content))
-	index := 0
+	index := -1
 	var lines []string
 
 	for scanner.Scan() {
+		index++
 
 		end := snippetEnd.FindStringSubmatch(scanner.Text())
 		if len(end) == 2 {
 			snippetIndex := snippets.GetSnippetIndex(end[1])
 			if snippetIndex == -1 {
-				snippets.snippets = append(snippets.snippets, Snippet{id: end[1], end: index, start: -1})
+				snippets.snippets = append(snippets.snippets, Snippet{id: end[1], end: index + (index*1), start: -1})
 			} else {
 				snippets.snippets[snippetIndex].end = index
 				snippets.snippets[snippetIndex].content = lines
@@ -124,8 +125,6 @@ func parseDocument(content string) Snippets {
 				snippets.snippets[snippetIndex].start = index
 			}
 		}
-
-		index++
 	}
 
 	return snippets

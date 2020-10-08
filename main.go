@@ -88,8 +88,18 @@ func main() {
 		}
 
 		snippets := parseDocument(string(content))
-		log.Printf("file '%s' contains %d snippet(s)", file, len(snippets.snippets))
-		allSnippets.snippets = append(allSnippets.snippets, snippets.snippets...)
+
+		if len(snippets.snippets) > 0 {
+			log.Printf("file '%s' contains %d snippet(s)", file, len(snippets.snippets))
+
+			/*
+			for _, t := range snippets.snippets {
+				fmt.Printf("%s: %d -> %d\n", t.id, t.start, t.end)
+			}
+			 */
+
+			allSnippets.snippets = append(allSnippets.snippets, snippets.snippets...)
+		}
 	}
 
 	if dirExists(sourcePath) {

@@ -5,6 +5,84 @@ import (
 	"testing"
 )
 
+func TestReplaceSnippetsWithLongLeadIn(t *testing.T) {
+
+	const snippets = `first line
+<!-- snippet:snippet1 -->
+xxx1
+<!-- /snippet:snippet1 -->
+<!-- snippet:snippet2 -->
+xxx2
+<!-- /snippet:snippet2 -->
+<!-- snippet:snippet3 -->
+xxx3
+<!-- /snippet:snippet3 -->
+<!-- snippet:snippet4 -->
+xxx4
+<!-- /snippet:snippet4 -->
+snippet third line`
+
+	const input = `first line
+<!-- snippet:snippet1 -->
+yyy
+<!-- /snippet:snippet1 -->
+second line
+<!-- snippet:snippet2 -->
+yyy
+<!-- /snippet:snippet2 -->
+third line
+<!-- snippet:snippet3 -->
+yyy
+<!-- /snippet:snippet3 -->
+fourth line
+<!-- snippet:snippet4 -->
+yyy
+<!-- /snippet:snippet4 -->
+fifth line`
+
+	const expected = `first line
+<!-- snippet:snippet1 -->
+xxx1
+<!-- /snippet:snippet1 -->
+second line
+<!-- snippet:snippet2 -->
+xxx2
+<!-- /snippet:snippet2 -->
+third line
+<!-- snippet:snippet3 -->
+xxx3
+<!-- /snippet:snippet3 -->
+fourth line
+<!-- snippet:snippet4 -->
+xxx4
+<!-- /snippet:snippet4 -->
+fifth line`
+
+	assert.Equal(t, expected, replaceSnippets(input, parseDocument(snippets)))
+}
+
+func TestReplaceSnippetsOnÖastLine(t *testing.T) {
+
+	const snippets = `first line
+<!-- snippet:snippet1 -->
+xxx
+<!-- /snippet:snippet1 -->`
+
+	const input = `first line
+<!-- snippet:snippet1 -->
+zzz
+<!-- /snippet:snippet1 -->
+third line`
+
+	const expected = `first line
+<!-- snippet:snippet1 -->
+xxx
+<!-- /snippet:snippet1 -->
+third line`
+
+	assert.Equal(t, expected, replaceSnippets(input, parseDocument(snippets)))
+}
+
 func TestReplaceSnippetsWithSingleLineContent(t *testing.T) {
 
 	const snippets = `snippet first line
@@ -222,8 +300,8 @@ last line`
 	snippet2 := result.snippets[result.GetSnippetIndex("snippet2")]
 	assert.Equal(t, "snippet2", snippet2.id)
 	assert.Equal(t, []string{"snippet2 content"}, snippet2.content)
-	assert.Equal(t, 6, snippet2.start)
-	assert.Equal(t, 8, snippet2.end)
+	assert.Equal(t, 7, snippet2.start)
+	assert.Equal(t, 9, snippet2.end)
 }
 
 func TestParseDocumentSnippetWithoutEnd(t *testing.T) {
@@ -259,5 +337,5 @@ third line`
 	snippet := result.snippets[result.GetSnippetIndex("snippet1")]
 	assert.Equal(t, "snippet1", snippet.id)
 	assert.Equal(t, -1, snippet.start)
-	assert.Equal(t, 2, snippet.end)
+	assert.Equal(t, 4, snippet.end)
 }
