@@ -58,7 +58,7 @@ xxx4
 <!-- /snippet:snippet4 -->
 fifth line`
 
-	assert.Equal(t, expected, replaceSnippets(input, parseDocument(snippets).snippets))
+	assert.Equal(t, expected, replaceSnippets(input, "", parseDocument(snippets).snippets))
 }
 
 func TestReplaceSnippetsOnÖastLine(t *testing.T) {
@@ -80,7 +80,7 @@ xxx
 <!-- /snippet:snippet1 -->
 third line`
 
-	assert.Equal(t, expected, replaceSnippets(input, parseDocument(snippets).snippets))
+	assert.Equal(t, expected, replaceSnippets(input, "", parseDocument(snippets).snippets))
 }
 
 func TestReplaceSnippetsWithSingleLineContent(t *testing.T) {
@@ -103,7 +103,7 @@ xxx
 <!-- /snippet:snippet1 -->
 third line`
 
-	assert.Equal(t, expected, replaceSnippets(input, parseDocument(snippets).snippets))
+	assert.Equal(t, expected, replaceSnippets(input, "", parseDocument(snippets).snippets))
 }
 
 func TestReplaceSnippetsWithMultipleLineContent(t *testing.T) {
@@ -128,7 +128,7 @@ xxx
 <!-- /snippet:snippet1 -->
 third line`
 
-	assert.Equal(t, expected, replaceSnippets(input, parseDocument(snippets).snippets))
+	assert.Equal(t, expected, replaceSnippets(input, "", parseDocument(snippets).snippets))
 }
 
 func TestReplaceSnippetsWithMixedLineContent(t *testing.T) {
@@ -164,7 +164,7 @@ snippet 2 content
 <!-- /snippet:snippet2 -->
 third line`
 
-	assert.Equal(t, expected, replaceSnippets(input, parseDocument(snippets).snippets))
+	assert.Equal(t, expected, replaceSnippets(input, "", parseDocument(snippets).snippets))
 }
 
 func TestReplaceSnippetsWithMixedLineContentNoSpaceInBetween(t *testing.T) {
@@ -197,7 +197,7 @@ snippet 2 content
 <!-- /snippet:snippet2 -->
 third line`
 
-	assert.Equal(t, expected, replaceSnippets(input, parseDocument(snippets).snippets))
+	assert.Equal(t, expected, replaceSnippets(input, "", parseDocument(snippets).snippets))
 }
 
 func TestReplaceSnippetsWithoutContent(t *testing.T) {
@@ -219,7 +219,7 @@ xxx
 <!-- /snippet:snippet1 -->
 third line`
 
-	assert.Equal(t, expected, replaceSnippets(input, parseDocument(snippets).snippets))
+	assert.Equal(t, expected, replaceSnippets(input, "", parseDocument(snippets).snippets))
 }
 
 /*
@@ -272,6 +272,22 @@ third line`
 	assert.Equal(t, []string{"snippet1 content"}, snippet.content)
 	assert.Equal(t, 1, snippet.start)
 	assert.Equal(t, 3, snippet.end)
+}
+
+func TestParseDocumentFileInclude(t *testing.T) {
+
+	const s = `first line
+<!-- file:folder/file1.txt -->
+<!-- /file:folder/file1.txt -->
+third line`
+
+	result := parseDocument(s)
+
+	assert.Equal(t, 1, len(result.snippets))
+	assert.Equal(t, "folder/file1.txt", result.snippets[0].id)
+	assert.Equal(t, "folder/file1.txt", result.snippets[0].filename)
+	assert.Equal(t, 1, result.snippets[0].start)
+	assert.Equal(t, 2, result.snippets[0].end)
 }
 
 func TestParseDocumentTwoSnippets(t *testing.T) {

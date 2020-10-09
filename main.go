@@ -90,27 +90,20 @@ func main() {
 
 		if len(parsedDocument.snippets) > 0 {
 			log.Printf("file '%s' contains %d snippet(s)", file, len(parsedDocument.snippets))
-
-			/*
-				for _, t := range parsedDocument.parsedDocument {
-					fmt.Printf("%s: %d -> %d\n", t.id, t.start, t.end)
-				}
-			*/
-
 			snippets = append(snippets, parsedDocument.snippets...)
 		}
 	}
 
 	if dirExists(sourcePath) {
 		for _, sourceFile := range listAllFiles(sourcePath) {
-			renderFile(sourceFile, targetPath, sourcePath, snippets)
+			renderFile(sourceFile, targetPath, sourcePath, snippetsPath, snippets)
 		}
 	} else {
-		renderFile(sourcePath, sourcePath, sourcePath, snippets)
+		renderFile(sourcePath, sourcePath, sourcePath, snippetsPath, snippets)
 	}
 }
 
-func renderFile(sourceFile string, targetPath string, sourcePath string, snippets []Snippet) {
+func renderFile(sourceFile string, targetPath string, sourcePath string, snippetPath string, snippets []Snippet) {
 	content, err := ioutil.ReadFile(sourceFile)
 
 	if err != nil {
@@ -124,7 +117,7 @@ func renderFile(sourceFile string, targetPath string, sourcePath string, snippet
 	log.Printf("rendering file '%s' to '%s'", sourceFile, targetFile)
 
 	os.MkdirAll(path.Dir(targetFile), os.ModePerm)
-	error := ioutil.WriteFile(targetFile, []byte(replaceSnippets(string(content), snippets)), 0644)
+	error := ioutil.WriteFile(targetFile, []byte(replaceSnippets(string(content), snippetPath, snippets)), 0644)
 	if error != nil {
 		log.Fatalf("%s", error)
 	}

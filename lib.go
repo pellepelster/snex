@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -13,18 +14,14 @@ import (
 
 type ParsedDocument struct {
 	snippets []Snippet
-	files    []File
-}
-
-type File struct {
-	name string
 }
 
 type Snippet struct {
-	id      string
-	start   int
-	end     int
-	content []string
+	id       string
+	start    int
+	end      int
+	content  []string
+	filename string
 }
 
 func GetSnippetIndex(snippets []Snippet, id string) int {
@@ -37,16 +34,16 @@ func GetSnippetIndex(snippets []Snippet, id string) int {
 	return -1
 }
 
-func replaceSnippets(content string, snippets []Snippet) string {
+func replaceSnippets(content string, basePath string, snippets []Snippet) string {
 	originalLines := strings.Split(content, "\n")
-	lines := []string{}
+	var lines []string
 	snippetsToReplace := parseDocument(content)
 
 	for i := 0; i < len(snippetsToReplace.snippets); i++ {
 		snippet := snippetsToReplace.snippets[i]
 
 		isFirst := i == 0
-		prefix := []string{}
+		var prefix []string
 
 		if isFirst {
 			prefix = originalLines[:snippet.start+1]
@@ -61,27 +58,73 @@ func replaceSnippets(content string, snippets []Snippet) string {
 		if isLast {
 			postfix = originalLines[snippet.end:]
 		} else {
-			//nextSnippet := snippetsToReplace.snippets[i+1]
 			postfix = originalLines[snippet.end : snippet.end+1]
 		}
 
 		lines = append(lines, prefix...)
 
-		i := GetSnippetIndex(snippets, snippet.id)
-		if i > -1 {
-			replacement := snippets[i]
-			lines = append(lines, replacement.content...)
+		if len(snippet.filename) > 0 {
+
+			content, err := ioutil.ReadFile(path.Join(basePath, snippet.filename))
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			lines = append(lines, strings.Split(string(content), "\n")...)
+		} else {
+			i := GetSnippetIndex(snippets, snippet.id)
+
+			if i > -1 {
+				replacement := snippets[i]
+				lines = append(lines, replacement.content...)
+			}
 		}
+
 		lines = append(lines, postfix...)
 	}
 
 	return strings.Join(lines[:], "\n")
 }
 
-func parseDocument(content string) ParsedDocument {
+var snippetStartExpression = regexp.MustCompile(`snippet:([a-zA-Z0-9_\-]*)`)
+var snippetEndExpression = regexp.MustCompile(`/snippet:([a-zA-Z0-9_\-]*)`)
 
-	snippetStart := regexp.MustCompile(`snippet:([a-zA-Z0-9_-]*)`)
-	snippetEnd := regexp.MustCompile(`/snippet:([a-zA-Z0-9_-]*)`)
+var fileStartExpression = regexp.MustCompile(`file:([a-zA-Z0-9_\-\/\.]*)`)
+var fileEndExpression = regexp.MustCompile(`/file:([a-zA-Z0-9_\-\/\.]*)`)
+
+type SnippetMarker struct {
+	isSnippet bool
+	isFile    bool
+	isEnd     bool
+	isStart   bool
+	id        string
+}
+
+func parseSnippetMarker(line string) SnippetMarker {
+	snippetEnd := snippetEndExpression.FindStringSubmatch(line)
+	if len(snippetEnd) == 2 {
+		return SnippetMarker{isSnippet: true, isEnd: true, id: snippetEnd[1]}
+	}
+
+	snippetStart := snippetStartExpression.FindStringSubmatch(line)
+	if len(snippetStart) == 2 {
+		return SnippetMarker{isSnippet: true, isStart: true, id: snippetStart[1]}
+	}
+
+	fileEnd := fileEndExpression.FindStringSubmatch(line)
+	if len(fileEnd) == 2 {
+		return SnippetMarker{isFile: true, isEnd: true, id: fileEnd[1]}
+	}
+
+	fileStart := fileStartExpression.FindStringSubmatch(line)
+	if len(fileStart) == 2 {
+		return SnippetMarker{isFile: true, isStart: true, id: fileStart[1]}
+	}
+
+	return SnippetMarker{}
+}
+
+func parseDocument(content string) ParsedDocument {
 
 	result := ParsedDocument{}
 
@@ -92,11 +135,16 @@ func parseDocument(content string) ParsedDocument {
 	for scanner.Scan() {
 		index++
 
-		end := snippetEnd.FindStringSubmatch(scanner.Text())
-		if len(end) == 2 {
-			snippetIndex := GetSnippetIndex(result.snippets, end[1])
+		snippetMarker := parseSnippetMarker(scanner.Text())
+
+		if snippetMarker.isEnd {
+			snippetIndex := GetSnippetIndex(result.snippets, snippetMarker.id)
 			if snippetIndex == -1 {
-				result.snippets = append(result.snippets, Snippet{id: end[1], end: index + (index * 1), start: -1})
+				if snippetMarker.isFile {
+					result.snippets = append(result.snippets, Snippet{id: snippetMarker.id, filename: snippetMarker.id, end: index + (index * 1), start: -1})
+				} else {
+					result.snippets = append(result.snippets, Snippet{id: snippetMarker.id, end: index + (index * 1), start: -1})
+				}
 			} else {
 				result.snippets[snippetIndex].end = index
 				result.snippets[snippetIndex].content = lines
@@ -110,15 +158,21 @@ func parseDocument(content string) ParsedDocument {
 			}
 		}
 
-		start := snippetStart.FindStringSubmatch(scanner.Text())
-		if len(start) == 2 {
-			snippetIndex := GetSnippetIndex(result.snippets, start[1])
+		if snippetMarker.isStart {
+			snippetIndex := GetSnippetIndex(result.snippets, snippetMarker.id)
 			if snippetIndex == -1 {
-				result.snippets = append(result.snippets, Snippet{id: start[1], start: index, end: -1})
+				if snippetMarker.isFile {
+					result.snippets = append(result.snippets, Snippet{id: snippetMarker.id, filename: snippetMarker.id, start: index, end: -1})
+				} else {
+					result.snippets = append(result.snippets, Snippet{id: snippetMarker.id, start: index, end: -1})
+				}
+
 				lines = []string{}
 			} else {
 				result.snippets[snippetIndex].start = index
 			}
+
+			continue
 		}
 	}
 
