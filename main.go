@@ -57,7 +57,6 @@ func main() {
 	}
 	targetPath := fullPath(targetParameter)
 
-
 	if !dirExists(sourcePath) && !fileExists(sourcePath) {
 		Fatalf(2, "source path '%s' not found\n", snippetsParameter)
 	}
@@ -74,7 +73,7 @@ func main() {
 		Fatalf(3, "snippets path '%s' and target path '%s' are not distinct\n", snippetsPath, targetPath)
 	}
 
-	var allSnippets = Snippets{}
+	var snippets []Snippet
 
 	for _, file := range listAllFiles(snippetsPath) {
 
@@ -87,31 +86,31 @@ func main() {
 			log.Fatal(err)
 		}
 
-		snippets := parseDocument(string(content))
+		parsedDocument := parseDocument(string(content))
 
-		if len(snippets.snippets) > 0 {
-			log.Printf("file '%s' contains %d snippet(s)", file, len(snippets.snippets))
+		if len(parsedDocument.snippets) > 0 {
+			log.Printf("file '%s' contains %d snippet(s)", file, len(parsedDocument.snippets))
 
 			/*
-			for _, t := range snippets.snippets {
-				fmt.Printf("%s: %d -> %d\n", t.id, t.start, t.end)
-			}
-			 */
+				for _, t := range parsedDocument.parsedDocument {
+					fmt.Printf("%s: %d -> %d\n", t.id, t.start, t.end)
+				}
+			*/
 
-			allSnippets.snippets = append(allSnippets.snippets, snippets.snippets...)
+			snippets = append(snippets, parsedDocument.snippets...)
 		}
 	}
 
 	if dirExists(sourcePath) {
 		for _, sourceFile := range listAllFiles(sourcePath) {
-			renderFile(sourceFile, targetPath, sourcePath, allSnippets)
+			renderFile(sourceFile, targetPath, sourcePath, snippets)
 		}
 	} else {
-		renderFile(sourcePath, sourcePath, sourcePath, allSnippets)
+		renderFile(sourcePath, sourcePath, sourcePath, snippets)
 	}
 }
 
-func renderFile(sourceFile string, targetPath string, sourcePath string, allSnippets Snippets) {
+func renderFile(sourceFile string, targetPath string, sourcePath string, snippets []Snippet) {
 	content, err := ioutil.ReadFile(sourceFile)
 
 	if err != nil {
@@ -125,7 +124,7 @@ func renderFile(sourceFile string, targetPath string, sourcePath string, allSnip
 	log.Printf("rendering file '%s' to '%s'", sourceFile, targetFile)
 
 	os.MkdirAll(path.Dir(targetFile), os.ModePerm)
-	error := ioutil.WriteFile(targetFile, []byte(replaceSnippets(string(content), allSnippets)), 0644)
+	error := ioutil.WriteFile(targetFile, []byte(replaceSnippets(string(content), snippets)), 0644)
 	if error != nil {
 		log.Fatalf("%s", error)
 	}
