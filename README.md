@@ -1,3 +1,5 @@
+![snex](https://github.com/pellepelster/snex/workflows/snex/badge.svg)
+
 # SNippet EXtractor (snex)
 This utility helps you with the task of keeping code samples inside of documentation in sync with real world code from your sources. The issues this solves is that source examples in  documentation tends to get outdated very quick. By pulling the source directly from a working project you can make sure the source examples used in you docs are always up to date.
 
