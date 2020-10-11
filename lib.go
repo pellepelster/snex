@@ -37,17 +37,16 @@ func GetSnippetIndex(snippets []Snippet, id string) int {
 	return -1
 }
 
-
-func GetSnippet(id string, parsedDocuments []ParsedDocument) (string, []string) {
+func GetSnippet(id string, parsedDocuments []ParsedDocument) (string, Snippet) {
 	for _, parsedDocument := range parsedDocuments {
 		for _, snippet := range parsedDocument.snippets {
 			if snippet.id == id {
-				return parsedDocument.file, snippet.content
+				return parsedDocument.file, snippet
 			}
 		}
 	}
 
-	return "", []string{}
+	return "", Snippet{}
 }
 
 func parseFile(file string) ParsedDocument {
@@ -67,42 +66,55 @@ func replaceSnippets(content string, basePath string, snippetTemplate string, pa
 	snippetsToReplace := parseSnippets(content)
 
 	for i := 0; i < len(snippetsToReplace); i++ {
-		snippet := snippetsToReplace[i]
+		snippetToReplace := snippetsToReplace[i]
+
+		var prefix []string
+		var postfix []string
 
 		isFirst := i == 0
-		var prefix []string
 
 		if isFirst {
-			prefix = originalLines[:snippet.start+1]
+			prefix = originalLines[:snippetToReplace.start+1]
 		} else {
 			lastSnippet := snippetsToReplace[i-1]
-			prefix = originalLines[lastSnippet.end+1 : snippet.start+1]
+			prefix = originalLines[lastSnippet.end+1 : snippetToReplace.start+1]
 		}
 
 		isLast := !(i < len(snippetsToReplace)-1)
-		var postfix []string
 
 		if isLast {
-			postfix = originalLines[snippet.end:]
+			postfix = originalLines[snippetToReplace.end:]
 		} else {
-			postfix = originalLines[snippet.end : snippet.end+1]
+			postfix = originalLines[snippetToReplace.end : snippetToReplace.end+1]
 		}
 
 		lines = append(lines, prefix...)
 
 		type TemplateData struct {
-			Content string
-			Filename string
+			Content    string
+			Filename   string
 			IsFullFile bool
-			Start int
-			End int
+			Start      int
+			End        int
 		}
 
-		filename, snippetLines := getSnippetLines(snippet, basePath, parsedDocuments)
+		filename, snippetToInsert := getSnippet(snippetToReplace, basePath, parsedDocuments)
 
-		templateData := TemplateData{Content: strings.Join(snippetLines, "\n"), Start: snippet.start, End: snippet.end, IsFullFile: snippet.filename != ""}
+		templateData := TemplateData{Content: strings.Join(snippetToInsert.content, "\n")}
+
 		templateData.Filename = strings.TrimPrefix(filename, basePath)
 		templateData.Filename = strings.TrimPrefix(templateData.Filename, "/")
+
+
+		if snippetToInsert.filename != "" {
+			templateData.Start = -1
+			templateData.End = -1
+			templateData.IsFullFile = true
+		} else {
+			templateData.Start = snippetToInsert.start + 2
+			templateData.End = snippetToInsert.end
+			templateData.IsFullFile = false
+		}
 
 		tmpl, err := template.New("test").Parse(snippetTemplate)
 
@@ -125,7 +137,7 @@ func replaceSnippets(content string, basePath string, snippetTemplate string, pa
 	return strings.Join(lines[:], "\n")
 }
 
-func getSnippetLines(snippet Snippet, basePath string, parsedDocuments []ParsedDocument) (string, []string)  {
+func getSnippet(snippet Snippet, basePath string, parsedDocuments []ParsedDocument) (string, Snippet) {
 
 	if len(snippet.filename) > 0 {
 
@@ -134,12 +146,12 @@ func getSnippetLines(snippet Snippet, basePath string, parsedDocuments []ParsedD
 			log.Fatal(err)
 		}
 
-		return snippet.filename, strings.Split(string(content), "\n")
+		return snippet.filename, Snippet{filename: snippet.filename, content: strings.Split(string(content), "\n")}
 	} else {
 		return GetSnippet(snippet.id, parsedDocuments)
 	}
 
-	return "", []string{}
+	return "", Snippet{}
 }
 
 var snippetStartExpression = regexp.MustCompile(`snippet:([a-zA-Z0-9_\-]*)`)

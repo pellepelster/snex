@@ -98,8 +98,8 @@ func main() {
 	var parsedDocuments []ParsedDocument
 
 	for _, file := range listAllFiles(snippetsPath) {
-
 		if sourcePath == file {
+			log.Printf("ignoring file '%s'", file)
 			continue
 		}
 
