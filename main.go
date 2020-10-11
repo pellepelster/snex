@@ -40,11 +40,18 @@ func main() {
 	var targetParameter string
 	flag.StringVar(&targetParameter, "target", "", "target directory for generated files")
 
+	var templateHelp = "available variables: \n" +
+		"\t{{.Content}}: the snippet content\n" +
+		"\t{{.Filename}}: the file content originated from\n" +
+		"\t{{.IsFullFile}}: true if the snippet was a file include" +
+		"\t{{.Start}}: include start line\n" +
+		"\t{{.End}}: include end line\n\n"
+
 	var template string
-	flag.StringVar(&template, "template", "{{.Content}}", "template to use for rendering snippet content")
+	flag.StringVar(&template, "template", "{{.Content}}", "template to use for rendering snippet content\n" + templateHelp)
 
 	var templateFile string
-	flag.StringVar(&templateFile, "template-file", "", "template file to use for rendering snippet content")
+	flag.StringVar(&templateFile, "template-file", "", "template file to use for rendering snippet content\n" + templateHelp)
 
 	flag.Parse()
 

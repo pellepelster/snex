@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strings"
 	"text/template"
+	"unicode/utf8"
 )
 
 type ParsedDocument struct {
@@ -57,9 +58,14 @@ func parseFile(file string) ParsedDocument {
 		Fatalf(99, "unable to read file '%s' (%s)", file, err)
 	}
 
+	if !IsText(content) {
+		log.Printf("file '%s' does not look like a text file, ignoring it", file)
+		return ParsedDocument{}
+	}
+
 	snippets, err := parseSnippets(string(content))
 	if err != nil {
-		Fatalf(5, "%s", err)
+		Fatalf(5, "parsing file %s' failed: %s", file, err)
 	}
 
 	return ParsedDocument{snippets: snippets, file: file}
@@ -72,7 +78,6 @@ func replaceSnippets(content string, basePath string, snippetTemplate string, pa
 	if err != nil {
 		Fatalf(5, "%s", err)
 	}
-
 
 	for i := 0; i < len(snippetsToReplace); i++ {
 		snippetToReplace := snippetsToReplace[i]
@@ -113,7 +118,6 @@ func replaceSnippets(content string, basePath string, snippetTemplate string, pa
 
 		templateData.Filename = strings.TrimPrefix(filename, basePath)
 		templateData.Filename = strings.TrimPrefix(templateData.Filename, "/")
-
 
 		if snippetToInsert.filename != "" {
 			templateData.Start = -1
@@ -255,7 +259,7 @@ func parseSnippets(content string) ([]Snippet, error) {
 
 	for _, snippet := range snippets {
 		if snippet.end == -1 || snippet.start == -1 {
-			return []Snippet{}, errors.New("unbalanced snippet markers")
+			return []Snippet{}, errors.New(fmt.Sprintf("unbalanced snippet markers for snippet '%s'", snippet.id))
 		}
 	}
 
@@ -303,4 +307,29 @@ func fullPath(p string) string {
 	}
 
 	return strings.TrimRight(path.Join(dir, p), "/")
+}
+
+// borrowed from "golang.org/x/tools/godoc/util"
+// Copyright 2013 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+// IsText reports whether a significant prefix of s looks like correct UTF-8;
+// that is, if it is likely that s is human-readable text.
+func IsText(s []byte) bool {
+	const max = 1024 // at least utf8.UTFMax
+	if len(s) > max {
+		s = s[0:max]
+	}
+	for i, c := range string(s) {
+		if i+utf8.UTFMax > len(s) {
+			// last char may be incomplete - ignore
+			break
+		}
+		if c == 0xFFFD || c < ' ' && c != '\n' && c != '\t' && c != '\f' {
+			// decoding error or control character - not a text file
+			return false
+		}
+	}
+	return true
 }

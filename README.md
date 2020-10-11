@@ -1,9 +1,8 @@
 # SNippet EXtractor (snex)
-This little utility helps you with the task of keeping code samples inside of documentation in sync with real world code that is proven to work.
+This utility helps you with the task of keeping code samples inside of documentation in sync with real world code from your sources. The issues this solves is that source examples in  documentation tends to get outdated very quick. By pulling the source directly from a working project you can make sure the source examples used in you docs are always up to date.
 
 ## How it works
-`snex` consumes files line by line, and looks for lines containing snippet start- and end-markers. To keep things simple and language agnostic it does not care for comment markers depending on the language.
-
+`snex` consumes a list of files line by line, and looks for lines containing snippet start- and end-markers. Then it crawls through all documentation files (e.g. a list of markdown files in a folder) and replaces all references to code snippets by the actual code. To keep things simple and language agnostic it does not care for comment markers (which differ between languages) and just looks for snippet start- and end-markers.
 
 So assuming you are tasked with writing some documentation and want to ensure it always contains up to date and correct examples. Just mark the place where the snippet should be inserted:
 ```markdown
@@ -31,7 +30,7 @@ public class ClassContainingSnippets {
 }
 ```
 
-when you let `snex` run over you documentation it will replace the snippet markers with the real code:
+when you let `snex` run over your documentation it will then replace the snippet markers with the real code:
 
 ```markdown
 # Documentation
@@ -44,10 +43,9 @@ How to assign names to variables:
 <!--- /snippet:snippet1 -->
 
 this is how you use strings in Java.
-
 ```
 
-`snex` will keep the markers to ensure it can be re-run anytime on the documentation. 
+`snex` will keep the original markers to ensure it can be re-run anytime on the documentation sources. 
 
 ## Usage
 
@@ -66,3 +64,46 @@ $ snex -source ./src/README.md -snippets ./src
 ```
 
 if a single file is specified as **source** and no target is given the file is transformed in place, using the snippets found in **snippets**
+
+### Template support
+To support various uses cases, a template can be given that is used to render the snippets, for example to render all snippets inside a markdown code block use this template:
+
+```
+snex --source ./POST.md  -snippets ./  -template '```{{.Content}}```'
+```
+
+This will result in the following output:
+
+```
+# Documentation
+
+How to assign names to variables:
+
+<!--- snippet:snippet1 -->
+    ```
+        var firstName = "Jens";
+        var lastName = "Mander";
+    ```
+<!--- /snippet:snippet1 -->
+
+this is how you use strings in Java.
+```
+
+for a more complex templates you can also use a file, see this example that was used to generate a hugo post:
+
+```
+snex --source ./POST.md  -snippets ./  -template-file my.template
+```
+
+
+**my.template**
+```
+{{ if .IsFullFile }}
+{{`{{< github repository="pellepelster/vault-ssh-ca"`}} file="{{.Filename}}"  >}}{{.Filename}}{{`{{< /github >}}`}}
+{{ else }}
+{{`{{< github repository="pellepelster/vault-ssh-ca"`}} file="{{.Filename}}#L{{.Start}}-L{{.End}}"  >}}{{.Filename}}{{`{{< /github >}}`}}
+{{ end }}
+{{`{{< highlight go "" >}}`}}
+{{.Content}}
+{{`{{< / highlight >}}`}}
+```

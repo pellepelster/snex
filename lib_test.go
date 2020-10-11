@@ -339,7 +339,7 @@ third line`
 	snippets, err := parseSnippets(s)
 
 	assert.Equal(t, 0, len(snippets))
-	assert.Equal(t, "unbalanced snippet markers", err.Error())
+	assert.Equal(t, "unbalanced snippet markers for snippet 'snippet1'", err.Error())
 }
 
 func TestParseDocumentSnippetWithoutStart(t *testing.T) {
@@ -352,7 +352,7 @@ third line`
 	snippets, err := parseSnippets(s)
 
 	assert.Equal(t, 0, len(snippets))
-	assert.Equal(t, "unbalanced snippet markers", err.Error())
+	assert.Equal(t, "unbalanced snippet markers for snippet 'snippet1'", err.Error())
 }
 
 func TestParseDocumentSnippetWithoutStartFile(t *testing.T) {
@@ -365,5 +365,5 @@ third line`
 	snippets, err := parseSnippets(s)
 
 	assert.Equal(t, 0, len(snippets))
-	assert.Equal(t, "unbalanced snippet markers", err.Error())
+	assert.Equal(t, "unbalanced snippet markers for snippet 'snippet1'", err.Error())
 }
