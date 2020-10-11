@@ -89,14 +89,14 @@ How to assign names to variables:
 this is how you use strings in Java.
 ```
 
-for a more complex templates you can also use a file, see this example that was used to generate a hugo post:
+for a more complex templates you can also use a file, see this example that was used to generate [this](https://github.com/pellepelster/pelle.io/blob/master/site/content/posts/ca-secured-ssh-connections.md) hugo post:
 
 ```
-snex --source ./POST.md  -snippets ./  -template-file my.template
+snex --source ./POST.md  -snippets ./  -template-file hugo.template
 ```
 
 
-**my.template**
+**hugo.template**
 ```
 {{ if .IsFullFile }}
 {{`{{< github repository="pellepelster/vault-ssh-ca"`}} file="{{.Filename}}"  >}}{{.Filename}}{{`{{< /github >}}`}}
