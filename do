@@ -12,15 +12,15 @@ function task_test {
     go test
     task_build
 
-    rm -rf "${DIR}/test/target"
-    mkdir -p "${DIR}/test/target"
+    rm -rf "${DIR}/test/distinct_folders/target"
+    mkdir -p "${DIR}/test/distinct_folders/target"
 
     test_return_code 1
     test_return_code 1 -source non_empty -target non_empty
     test_return_code 1 -snippets non_empty -target non_empty
     test_return_code 1 -snippets non_empty -source non_empty
     test_return_code 2 -source non_existing -target non_existing -snippets non_existing
-    test_return_code 2 -source ./test/distinct_folders/source -target non_existing -snippets non_existing
+    test_return_code 2 -source ${DIR}/test/distinct_folders/source -target non_existing -snippets non_existing
     test_return_code 3 -source ${DIR}/test/distinct_folders/source -target ${DIR}/test/distinct_folders/snippets -snippets ${DIR}/test/distinct_folders/snippets
     test_return_code 3 -source ${DIR}/test/distinct_folders/source -target ${DIR}/test/distinct_folders/snippets/nested_folder -snippets ${DIR}/test/distinct_folders/snippets
     test_return_code 0 -source ${DIR}/test/distinct_folders/source -target ${DIR}/test/distinct_folders/target -snippets ${DIR}/test/distinct_folders/snippets
@@ -31,6 +31,12 @@ function task_test {
 
     test_return_code 0 -source ${DIR}/test/single_source_inside_snippets_no_target/snippets/source1.txt -snippets ${DIR}/test/single_source_inside_snippets_no_target/snippets
     diff "${DIR}/test/single_source_inside_snippets_no_target/snippets" "${DIR}/test/single_source_inside_snippets_no_target/expected"
+
+    rm -rf "${DIR}/test/template_in_file/target"
+    mkdir -p "${DIR}/test/template_in_file/target"
+    test_return_code 0 -template-file ${DIR}/test/template_in_file/test.template -source ${DIR}/test/template_in_file/source -target ${DIR}/test/template_in_file/target -snippets ${DIR}/test/template_in_file/snippets
+    diff "${DIR}/test/template_in_file/target" "${DIR}/test/template_in_file/expected"
+
 }
 
 function test_return_code {

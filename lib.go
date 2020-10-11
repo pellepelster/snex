@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -10,10 +11,12 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"text/template"
 )
 
 type ParsedDocument struct {
 	snippets []Snippet
+	file     string
 }
 
 type Snippet struct {
@@ -34,13 +37,37 @@ func GetSnippetIndex(snippets []Snippet, id string) int {
 	return -1
 }
 
-func replaceSnippets(content string, basePath string, snippets []Snippet) string {
+
+func GetSnippet(id string, parsedDocuments []ParsedDocument) (string, []string) {
+	for _, parsedDocument := range parsedDocuments {
+		for _, snippet := range parsedDocument.snippets {
+			if snippet.id == id {
+				return parsedDocument.file, snippet.content
+			}
+		}
+	}
+
+	return "", []string{}
+}
+
+func parseFile(file string) ParsedDocument {
+
+	content, err := ioutil.ReadFile(file)
+	if err != nil {
+		Fatalf(99, "unable to read file '%s' (%s)", file, err)
+	}
+
+	snippets := parseSnippets(string(content))
+	return ParsedDocument{snippets: snippets, file: file}
+}
+
+func replaceSnippets(content string, basePath string, snippetTemplate string, parsedDocuments []ParsedDocument) string {
 	originalLines := strings.Split(content, "\n")
 	var lines []string
-	snippetsToReplace := parseDocument(content)
+	snippetsToReplace := parseSnippets(content)
 
-	for i := 0; i < len(snippetsToReplace.snippets); i++ {
-		snippet := snippetsToReplace.snippets[i]
+	for i := 0; i < len(snippetsToReplace); i++ {
+		snippet := snippetsToReplace[i]
 
 		isFirst := i == 0
 		var prefix []string
@@ -48,12 +75,12 @@ func replaceSnippets(content string, basePath string, snippets []Snippet) string
 		if isFirst {
 			prefix = originalLines[:snippet.start+1]
 		} else {
-			lastSnippet := snippetsToReplace.snippets[i-1]
+			lastSnippet := snippetsToReplace[i-1]
 			prefix = originalLines[lastSnippet.end+1 : snippet.start+1]
 		}
 
-		isLast := !(i < len(snippetsToReplace.snippets)-1)
-		postfix := []string{}
+		isLast := !(i < len(snippetsToReplace)-1)
+		var postfix []string
 
 		if isLast {
 			postfix = originalLines[snippet.end:]
@@ -63,27 +90,56 @@ func replaceSnippets(content string, basePath string, snippets []Snippet) string
 
 		lines = append(lines, prefix...)
 
-		if len(snippet.filename) > 0 {
-
-			content, err := ioutil.ReadFile(path.Join(basePath, snippet.filename))
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			lines = append(lines, strings.Split(string(content), "\n")...)
-		} else {
-			i := GetSnippetIndex(snippets, snippet.id)
-
-			if i > -1 {
-				replacement := snippets[i]
-				lines = append(lines, replacement.content...)
-			}
+		type TemplateData struct {
+			Content string
+			Filename string
+			IsFullFile bool
+			Start int
+			End int
 		}
 
+		filename, snippetLines := getSnippetLines(snippet, basePath, parsedDocuments)
+
+		templateData := TemplateData{Content: strings.Join(snippetLines, "\n"), Start: snippet.start, End: snippet.end, IsFullFile: snippet.filename != ""}
+		templateData.Filename = strings.TrimPrefix(filename, basePath)
+		templateData.Filename = strings.TrimPrefix(templateData.Filename, "/")
+
+		tmpl, err := template.New("test").Parse(snippetTemplate)
+
+		if err != nil {
+			Fatalf(99, "could not parse template: %s", err)
+		}
+
+		var renderedTemplate bytes.Buffer
+		err = tmpl.Execute(&renderedTemplate, templateData)
+		if err != nil {
+			Fatalf(99, "could not execute template: %s", err)
+		}
+
+		renderedLines := strings.Split(renderedTemplate.String(), "\n")
+
+		lines = append(lines, renderedLines...)
 		lines = append(lines, postfix...)
 	}
 
 	return strings.Join(lines[:], "\n")
+}
+
+func getSnippetLines(snippet Snippet, basePath string, parsedDocuments []ParsedDocument) (string, []string)  {
+
+	if len(snippet.filename) > 0 {
+
+		content, err := ioutil.ReadFile(path.Join(basePath, snippet.filename))
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		return snippet.filename, strings.Split(string(content), "\n")
+	} else {
+		return GetSnippet(snippet.id, parsedDocuments)
+	}
+
+	return "", []string{}
 }
 
 var snippetStartExpression = regexp.MustCompile(`snippet:([a-zA-Z0-9_\-]*)`)
@@ -124,9 +180,9 @@ func parseSnippetMarker(line string) SnippetMarker {
 	return SnippetMarker{}
 }
 
-func parseDocument(content string) ParsedDocument {
+func parseSnippets(content string) []Snippet {
 
-	result := ParsedDocument{}
+	var snippets []Snippet
 
 	scanner := bufio.NewScanner(strings.NewReader(content))
 	index := -1
@@ -138,16 +194,16 @@ func parseDocument(content string) ParsedDocument {
 		snippetMarker := parseSnippetMarker(scanner.Text())
 
 		if snippetMarker.isEnd {
-			snippetIndex := GetSnippetIndex(result.snippets, snippetMarker.id)
+			snippetIndex := GetSnippetIndex(snippets, snippetMarker.id)
 			if snippetIndex == -1 {
 				if snippetMarker.isFile {
-					result.snippets = append(result.snippets, Snippet{id: snippetMarker.id, filename: snippetMarker.id, end: index + (index * 1), start: -1})
+					snippets = append(snippets, Snippet{id: snippetMarker.id, filename: snippetMarker.id, end: index + (index * 1), start: -1})
 				} else {
-					result.snippets = append(result.snippets, Snippet{id: snippetMarker.id, end: index + (index * 1), start: -1})
+					snippets = append(snippets, Snippet{id: snippetMarker.id, end: index + (index * 1), start: -1})
 				}
 			} else {
-				result.snippets[snippetIndex].end = index
-				result.snippets[snippetIndex].content = lines
+				snippets[snippetIndex].end = index
+				snippets[snippetIndex].content = lines
 			}
 			lines = nil
 
@@ -159,28 +215,28 @@ func parseDocument(content string) ParsedDocument {
 		}
 
 		if snippetMarker.isStart {
-			snippetIndex := GetSnippetIndex(result.snippets, snippetMarker.id)
+			snippetIndex := GetSnippetIndex(snippets, snippetMarker.id)
 			if snippetIndex == -1 {
 				if snippetMarker.isFile {
-					result.snippets = append(result.snippets, Snippet{id: snippetMarker.id, filename: snippetMarker.id, start: index, end: -1})
+					snippets = append(snippets, Snippet{id: snippetMarker.id, filename: snippetMarker.id, start: index, end: -1})
 				} else {
-					result.snippets = append(result.snippets, Snippet{id: snippetMarker.id, start: index, end: -1})
+					snippets = append(snippets, Snippet{id: snippetMarker.id, start: index, end: -1})
 				}
 
 				lines = []string{}
 			} else {
-				result.snippets[snippetIndex].start = index
+				snippets[snippetIndex].start = index
 			}
 
 			continue
 		}
 	}
 
-	return result
+	return snippets
 }
 
 func listAllFiles(rootPath string) []string {
-	result := []string{}
+	var result []string
 
 	err := filepath.Walk(rootPath,
 		func(path string, info os.FileInfo, err error) error {

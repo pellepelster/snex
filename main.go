@@ -40,6 +40,12 @@ func main() {
 	var targetParameter string
 	flag.StringVar(&targetParameter, "target", "", "target directory for generated files")
 
+	var template string
+	flag.StringVar(&template, "template", "{{.Content}}", "template to use for rendering snippet content")
+
+	var templateFile string
+	flag.StringVar(&templateFile, "template-file", "", "template file to use for rendering snippet content")
+
 	flag.Parse()
 
 	if sourceParameter == "" {
@@ -73,7 +79,23 @@ func main() {
 		Fatalf(3, "snippets path '%s' and target path '%s' are not distinct\n", snippetsPath, targetPath)
 	}
 
-	var snippets []Snippet
+	snippetTemplate := template
+
+	if templateFile != "" {
+		if !fileExists(templateFile) {
+			Fatalf(3, "template file '%s' not found\n", templateFile)
+
+		}
+
+		content, err := ioutil.ReadFile(templateFile)
+		if err != nil {
+			Fatalf(99, "unable to read template file '%s' (%s)", templateFile, err)
+		}
+
+		snippetTemplate = string(content)
+	}
+
+	var parsedDocuments []ParsedDocument
 
 	for _, file := range listAllFiles(snippetsPath) {
 
@@ -81,33 +103,27 @@ func main() {
 			continue
 		}
 
-		content, err := ioutil.ReadFile(file)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		parsedDocument := parseDocument(string(content))
-
+		parsedDocument := parseFile(file)
 		if len(parsedDocument.snippets) > 0 {
 			log.Printf("file '%s' contains %d snippet(s)", file, len(parsedDocument.snippets))
-			snippets = append(snippets, parsedDocument.snippets...)
 		}
+		parsedDocuments = append(parsedDocuments, parsedDocument)
 	}
 
 	if dirExists(sourcePath) {
 		for _, sourceFile := range listAllFiles(sourcePath) {
-			renderFile(sourceFile, targetPath, sourcePath, snippetsPath, snippets)
+			renderFile(sourceFile, targetPath, sourcePath, snippetsPath, snippetTemplate, parsedDocuments)
 		}
 	} else {
-		renderFile(sourcePath, sourcePath, sourcePath, snippetsPath, snippets)
+		renderFile(sourcePath, sourcePath, sourcePath, snippetsPath, snippetTemplate, parsedDocuments)
 	}
 }
 
-func renderFile(sourceFile string, targetPath string, sourcePath string, snippetPath string, snippets []Snippet) {
+func renderFile(sourceFile string, targetPath string, sourcePath string, snippetPath string, snippetTemplate string, parsedDocuments []ParsedDocument) {
 	content, err := ioutil.ReadFile(sourceFile)
 
 	if err != nil {
-		log.Fatal(err)
+		Fatalf(99, "unable to read file '%s' (%s)", sourceFile, err)
 	}
 
 	prefix := longestcommon.Prefix([]string{sourceFile, targetPath})
@@ -117,8 +133,8 @@ func renderFile(sourceFile string, targetPath string, sourcePath string, snippet
 	log.Printf("rendering file '%s' to '%s'", sourceFile, targetFile)
 
 	os.MkdirAll(path.Dir(targetFile), os.ModePerm)
-	error := ioutil.WriteFile(targetFile, []byte(replaceSnippets(string(content), snippetPath, snippets)), 0644)
-	if error != nil {
-		log.Fatalf("%s", error)
+	err = ioutil.WriteFile(targetFile, []byte(replaceSnippets(string(content), snippetPath, snippetTemplate, parsedDocuments)), 0644)
+	if err != nil {
+		Fatalf(99, "unable to write file '%s' (%s)", targetFile, err)
 	}
 }

@@ -58,7 +58,7 @@ xxx4
 <!-- /snippet:snippet4 -->
 fifth line`
 
-	assert.Equal(t, expected, replaceSnippets(input, "", parseDocument(snippets).snippets))
+	assert.Equal(t, expected, replaceSnippets(input, "", "{{.Content}}", []ParsedDocument{{snippets: parseSnippets(snippets)}}))
 }
 
 func TestReplaceSnippetsOnÖastLine(t *testing.T) {
@@ -80,7 +80,7 @@ xxx
 <!-- /snippet:snippet1 -->
 third line`
 
-	assert.Equal(t, expected, replaceSnippets(input, "", parseDocument(snippets).snippets))
+	assert.Equal(t, expected, replaceSnippets(input, "", "{{.Content}}", []ParsedDocument{{snippets: parseSnippets(snippets)}}))
 }
 
 func TestReplaceSnippetsWithSingleLineContent(t *testing.T) {
@@ -103,7 +103,7 @@ xxx
 <!-- /snippet:snippet1 -->
 third line`
 
-	assert.Equal(t, expected, replaceSnippets(input, "", parseDocument(snippets).snippets))
+	assert.Equal(t, expected, replaceSnippets(input, "", "{{.Content}}", []ParsedDocument{ ParsedDocument{ snippets: parseSnippets(snippets)}}))
 }
 
 func TestReplaceSnippetsWithMultipleLineContent(t *testing.T) {
@@ -128,7 +128,7 @@ xxx
 <!-- /snippet:snippet1 -->
 third line`
 
-	assert.Equal(t, expected, replaceSnippets(input, "", parseDocument(snippets).snippets))
+	assert.Equal(t, expected, replaceSnippets(input, "", "{{.Content}}", []ParsedDocument{{snippets: parseSnippets(snippets)}}))
 }
 
 func TestReplaceSnippetsWithMixedLineContent(t *testing.T) {
@@ -164,7 +164,7 @@ snippet 2 content
 <!-- /snippet:snippet2 -->
 third line`
 
-	assert.Equal(t, expected, replaceSnippets(input, "", parseDocument(snippets).snippets))
+	assert.Equal(t, expected, replaceSnippets(input, "", "{{.Content}}", []ParsedDocument{{snippets: parseSnippets(snippets)}}))
 }
 
 func TestReplaceSnippetsWithMixedLineContentNoSpaceInBetween(t *testing.T) {
@@ -197,7 +197,7 @@ snippet 2 content
 <!-- /snippet:snippet2 -->
 third line`
 
-	assert.Equal(t, expected, replaceSnippets(input, "", parseDocument(snippets).snippets))
+	assert.Equal(t, expected, replaceSnippets(input, "", "{{.Content}}", []ParsedDocument{{snippets: parseSnippets(snippets)}}))
 }
 
 func TestReplaceSnippetsWithoutContent(t *testing.T) {
@@ -219,7 +219,7 @@ xxx
 <!-- /snippet:snippet1 -->
 third line`
 
-	assert.Equal(t, expected, replaceSnippets(input, "", parseDocument(snippets).snippets))
+	assert.Equal(t, expected, replaceSnippets(input, "", "{{.Content}}", []ParsedDocument{{snippets: parseSnippets(snippets)}}))
 }
 
 /*
@@ -262,12 +262,12 @@ snippet1 content
 <!-- /snippet:snippet1 -->
 third line`
 
-	result := parseDocument(s)
+	snippets := parseSnippets(s)
 
-	assert.Equal(t, 1, len(result.snippets))
-	assert.Equal(t, -1, GetSnippetIndex(result.snippets, "xxx"))
+	assert.Equal(t, 1, len(snippets))
+	assert.Equal(t, -1, GetSnippetIndex(snippets, "xxx"))
 
-	snippet := result.snippets[GetSnippetIndex(result.snippets, "snippet1")]
+	snippet := snippets[GetSnippetIndex(snippets, "snippet1")]
 	assert.Equal(t, "snippet1", snippet.id)
 	assert.Equal(t, []string{"snippet1 content"}, snippet.content)
 	assert.Equal(t, 1, snippet.start)
@@ -281,13 +281,13 @@ func TestParseDocumentFileInclude(t *testing.T) {
 <!-- /file:folder/file1.txt -->
 third line`
 
-	result := parseDocument(s)
+	snippets := parseSnippets(s)
 
-	assert.Equal(t, 1, len(result.snippets))
-	assert.Equal(t, "folder/file1.txt", result.snippets[0].id)
-	assert.Equal(t, "folder/file1.txt", result.snippets[0].filename)
-	assert.Equal(t, 1, result.snippets[0].start)
-	assert.Equal(t, 2, result.snippets[0].end)
+	assert.Equal(t, 1, len(snippets))
+	assert.Equal(t, "folder/file1.txt", snippets[0].id)
+	assert.Equal(t, "folder/file1.txt", snippets[0].filename)
+	assert.Equal(t, 1, snippets[0].start)
+	assert.Equal(t, 2, snippets[0].end)
 }
 
 func TestParseDocumentTwoSnippets(t *testing.T) {
@@ -304,18 +304,18 @@ snippet2 content
 <!-- /snippet:snippet2 -->
 last line`
 
-	result := parseDocument(s)
+	snippets := parseSnippets(s)
 
-	assert.Equal(t, 2, len(result.snippets))
-	assert.Equal(t, -1, GetSnippetIndex(result.snippets, "xxx"))
+	assert.Equal(t, 2, len(snippets))
+	assert.Equal(t, -1, GetSnippetIndex(snippets, "xxx"))
 
-	snippet1 := result.snippets[GetSnippetIndex(result.snippets, "snippet1")]
+	snippet1 := snippets[GetSnippetIndex(snippets, "snippet1")]
 	assert.Equal(t, "snippet1", snippet1.id)
 	assert.Equal(t, []string{"snippet1 content 1", "snippet1 content 2"}, snippet1.content)
 	assert.Equal(t, 1, snippet1.start)
 	assert.Equal(t, 4, snippet1.end)
 
-	snippet2 := result.snippets[GetSnippetIndex(result.snippets, "snippet2")]
+	snippet2 := snippets[GetSnippetIndex(snippets, "snippet2")]
 	assert.Equal(t, "snippet2", snippet2.id)
 	assert.Equal(t, []string{"snippet2 content"}, snippet2.content)
 	assert.Equal(t, 7, snippet2.start)
@@ -329,12 +329,12 @@ func TestParseDocumentSnippetWithoutEnd(t *testing.T) {
 second line
 third line`
 
-	result := parseDocument(s)
+	snippets := parseSnippets(s)
 
-	assert.Equal(t, 1, len(result.snippets))
-	assert.Equal(t, -1, GetSnippetIndex(result.snippets, "xxx"))
+	assert.Equal(t, 1, len(snippets))
+	assert.Equal(t, -1, GetSnippetIndex(snippets, "xxx"))
 
-	snippet := result.snippets[GetSnippetIndex(result.snippets, "snippet1")]
+	snippet := snippets[GetSnippetIndex(snippets, "snippet1")]
 	assert.Equal(t, "snippet1", snippet.id)
 	assert.Equal(t, 1, snippet.start)
 	assert.Equal(t, -1, snippet.end)
@@ -347,12 +347,12 @@ second line
 <!-- /snippet:snippet1 -->
 third line`
 
-	result := parseDocument(s)
+	snippets := parseSnippets(s)
 
-	assert.Equal(t, 1, len(result.snippets))
-	assert.Equal(t, -1, GetSnippetIndex(result.snippets, "xxx"))
+	assert.Equal(t, 1, len(snippets))
+	assert.Equal(t, -1, GetSnippetIndex(snippets, "xxx"))
 
-	snippet := result.snippets[GetSnippetIndex(result.snippets, "snippet1")]
+	snippet := snippets[GetSnippetIndex(snippets, "snippet1")]
 	assert.Equal(t, "snippet1", snippet.id)
 	assert.Equal(t, -1, snippet.start)
 	assert.Equal(t, 4, snippet.end)
