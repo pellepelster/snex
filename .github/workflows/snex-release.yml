@@ -28,7 +28,7 @@ jobs:
           draft: false
           prerelease: false
       - name: upload linux_amd64 release
-        id: upload-release-asset
+        id: upload-linux-amd64-release-asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -38,7 +38,7 @@ jobs:
           asset_name: snex_linux_amd64
           asset_content_type: application/octet-stream
       - name: upload darwin_amd64 release
-        id: upload-release-asset
+        id: upload-darwin-amd64-release-asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -48,7 +48,7 @@ jobs:
           asset_name: snex_darwin_amd64
           asset_content_type: application/octet-stream
       - name: upload windows_amd64 release
-        id: upload-release-asset
+        id: upload-windows-amd64-release-asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
