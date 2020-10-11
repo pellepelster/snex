@@ -5,7 +5,14 @@ set -eu
 DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 
 function task_build {
-  go build
+  export GOOS=linux GOARCH=amd64
+  go build -o snex_${GOOS}_${GOARCH}
+
+  export GOOS=darwin GOARCH=amd64
+  go build -o snex_${GOOS}_${GOARCH}
+
+  export GOOS=windows GOARCH=amd64
+  go build -o snex_${GOOS}_${GOARCH}
 }
 
 function task_test {
@@ -51,7 +58,7 @@ function test_return_code {
     set +e
     local expected_return_code="${1:-}"
     shift || true
-    "${DIR}/snex" "$@"
+    "${DIR}/snex_linux_amd64" "$@"
 
     local return_code=$?
     if [ ${return_code} -ne ${expected_return_code} ]; then
