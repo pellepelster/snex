@@ -1,7 +1,12 @@
 ![snex](https://github.com/pellepelster/snex/workflows/snex/badge.svg)
 
 # SNippet EXtractor (snex)
-This utility helps you with the task of keeping code samples inside of documentation in sync with real world code from your sources. The issues this solves is that source examples in  documentation tends to get outdated very quick. By pulling the source directly from a working project you can make sure the source examples used in you docs are always up to date.
+This utility helps you with the task of keeping code samples inside of documentation in sync with real world code from your sources. The issues this solves is that source examples in documentation tends to get outdated very quick. By pulling the source directly from a working project you can make sure the source examples used in you docs are always up to date.
+
+## Downloads
+* Linux (AMD64) [snex_linux_amd64](https://github.com/pellepelster/snex/releases/latest/download/snex_linux_amd64)
+* Windows (AMD64) [snex_windows_amd64](https://github.com/pellepelster/snex/releases/latest/download/snex_windows_amd64)
+* Darwin (AMD64) [snex_darwin_amd64](https://github.com/pellepelster/snex/releases/latest/download/snex_darwin_amd64)
 
 ## How it works
 `snex` consumes a list of files line by line, and looks for lines containing snippet start- and end-markers. Then it crawls through all documentation files (e.g. a list of markdown files in a folder) and replaces all references to code snippets by the actual code. To keep things simple and language agnostic it does not care for comment markers (which differ between languages) and just looks for snippet start- and end-markers.
@@ -70,13 +75,13 @@ if a single file is specified as **source** and no target is given the file is t
 ### Template support
 To support various uses cases, a template can be given that is used to render the snippets, for example to render all snippets inside a markdown code block use this template:
 
-```
+```shell script
 snex --source ./POST.md  -snippets ./  -template '```{{.Content}}```'
 ```
 
 This will result in the following output:
 
-```
+```shell script
 # Documentation
 
 How to assign names to variables:
@@ -93,13 +98,12 @@ this is how you use strings in Java.
 
 for a more complex templates you can also use a file, see this example that was used to generate [this](https://github.com/pellepelster/pelle.io/blob/master/site/content/posts/ca-secured-ssh-connections.md) hugo post:
 
-```
+```shell script
 snex --source ./POST.md  -snippets ./  -template-file hugo.template
 ```
 
-
 **hugo.template**
-```
+```markdown
 {{ if .IsFullFile }}
 {{`{{< github repository="pellepelster/vault-ssh-ca"`}} file="{{.Filename}}"  >}}{{.Filename}}{{`{{< /github >}}`}}
 {{ else }}
