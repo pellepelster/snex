@@ -254,7 +254,7 @@ func parseSnippets(content string) ([]Snippet, error) {
 	}
 
 	for _, snippet := range snippets {
-		if snippet.filename == "" && (snippet.end == -1 || snippet.start == -1) {
+		if snippet.end == -1 || snippet.start == -1 {
 			return []Snippet{}, errors.New("unbalanced snippet markers")
 		}
 	}

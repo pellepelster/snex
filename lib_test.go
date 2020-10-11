@@ -354,3 +354,16 @@ third line`
 	assert.Equal(t, 0, len(snippets))
 	assert.Equal(t, "unbalanced snippet markers", err.Error())
 }
+
+func TestParseDocumentSnippetWithoutStartFile(t *testing.T) {
+
+	const s = `first line
+second line
+<!-- /file:snippet1 -->
+third line`
+
+	snippets, err := parseSnippets(s)
+
+	assert.Equal(t, 0, len(snippets))
+	assert.Equal(t, "unbalanced snippet markers", err.Error())
+}
