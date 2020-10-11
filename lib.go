@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -56,14 +57,22 @@ func parseFile(file string) ParsedDocument {
 		Fatalf(99, "unable to read file '%s' (%s)", file, err)
 	}
 
-	snippets := parseSnippets(string(content))
+	snippets, err := parseSnippets(string(content))
+	if err != nil {
+		Fatalf(5, "%s", err)
+	}
+
 	return ParsedDocument{snippets: snippets, file: file}
 }
 
 func replaceSnippets(content string, basePath string, snippetTemplate string, parsedDocuments []ParsedDocument) string {
 	originalLines := strings.Split(content, "\n")
 	var lines []string
-	snippetsToReplace := parseSnippets(content)
+	snippetsToReplace, err := parseSnippets(content)
+	if err != nil {
+		Fatalf(5, "%s", err)
+	}
+
 
 	for i := 0; i < len(snippetsToReplace); i++ {
 		snippetToReplace := snippetsToReplace[i]
@@ -192,7 +201,7 @@ func parseSnippetMarker(line string) SnippetMarker {
 	return SnippetMarker{}
 }
 
-func parseSnippets(content string) []Snippet {
+func parseSnippets(content string) ([]Snippet, error) {
 
 	var snippets []Snippet
 
@@ -244,7 +253,13 @@ func parseSnippets(content string) []Snippet {
 		}
 	}
 
-	return snippets
+	for _, snippet := range snippets {
+		if snippet.filename == "" && (snippet.end == -1 || snippet.start == -1) {
+			return []Snippet{}, errors.New("unbalanced snippet markers")
+		}
+	}
+
+	return snippets, nil
 }
 
 func listAllFiles(rootPath string) []string {

@@ -40,6 +40,10 @@ function task_test {
     mkdir -p "${DIR}/test/file_include_does_not_exist/target"
     mkdir -p "${DIR}/test/file_include_does_not_exist/source"
     test_return_code 4 -source ${DIR}/test/file_include_does_not_exist/source -target ${DIR}/test/file_include_does_not_exist/target -snippets ${DIR}/test/file_include_does_not_exist/snippets
+
+    mkdir -p "${DIR}/test/unbalanced_snippet_markers/target"
+    mkdir -p "${DIR}/test/unbalanced_snippet_markers/source"
+    test_return_code 5 -source ${DIR}/test/unbalanced_snippet_markers/source -target ${DIR}/test/unbalanced_snippet_markers/target -snippets ${DIR}/test/unbalanced_snippet_markers/snippets
 }
 
 function test_return_code {

@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"github.com/jpillora/longestcommon"
 	"io/ioutil"
 	"log"
@@ -114,7 +113,6 @@ func main() {
 
 	for _, parsedDocument := range parsedDocuments {
 		for _, snippet := range parsedDocument.snippets {
-			fmt.Printf("==== %s\n", snippet.filename)
 			if snippet.filename != "" && !fileExists(path.Join(snippet.filename)) {
 				Fatalf(4, "file include '%s' not found", snippet.filename)
 			}
