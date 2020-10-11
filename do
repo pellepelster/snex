@@ -37,6 +37,9 @@ function task_test {
     test_return_code 0 -template-file ${DIR}/test/template_in_file/test.template -source ${DIR}/test/template_in_file/source -target ${DIR}/test/template_in_file/target -snippets ${DIR}/test/template_in_file/snippets
     diff "${DIR}/test/template_in_file/target" "${DIR}/test/template_in_file/expected"
 
+    mkdir -p "${DIR}/test/file_include_does_not_exist/target"
+    mkdir -p "${DIR}/test/file_include_does_not_exist/source"
+    test_return_code 4 -source ${DIR}/test/file_include_does_not_exist/source -target ${DIR}/test/file_include_does_not_exist/target -snippets ${DIR}/test/file_include_does_not_exist/snippets
 }
 
 function test_return_code {
