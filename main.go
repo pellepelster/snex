@@ -71,11 +71,11 @@ func main() {
 	targetPath := fullPath(targetParameter)
 
 	if !dirExists(sourcePath) && !fileExists(sourcePath) {
-		Fatalf(2, "source path '%s' not found\n", snippetsParameter)
+		Fatalf(2, "source path '%s' not found\n", sourcePath)
 	}
 
 	if !dirExists(targetPath) && !fileExists(sourcePath) {
-		Fatalf(2, "target path '%s' not found\n", snippetsParameter)
+		Fatalf(2, "target path '%s' not found\n", targetParameter)
 	}
 
 	if !dirExists(snippetsPath) {
@@ -120,7 +120,7 @@ func main() {
 
 	for _, parsedDocument := range parsedDocuments {
 		for _, snippet := range parsedDocument.snippets {
-			if snippet.filename != "" && !fileExists(path.Join(snippet.filename)) {
+			if snippet.filename != "" && !fileExists(path.Join(snippet.filename)) && snippet.end > -1 && snippet.start > -1 {
 				Fatalf(4, "file include '%s' not found", snippet.filename)
 			}
 		}

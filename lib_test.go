@@ -62,7 +62,7 @@ fifth line`
 	assert.Equal(t, expected, replaceSnippets(input, "", "{{.Content}}", []ParsedDocument{{snippets: s}}))
 }
 
-func TestReplaceSnippetsOnÖastLine(t *testing.T) {
+func TestReplaceSnippetsOnLastLine(t *testing.T) {
 
 	const snippets = `first line
 <!-- snippet:snippet1 -->
@@ -336,10 +336,11 @@ func TestParseDocumentSnippetWithoutEnd(t *testing.T) {
 second line
 third line`
 
-	snippets, err := parseSnippets(s)
+	snippets, _ := parseSnippets(s)
 
-	assert.Equal(t, 0, len(snippets))
-	assert.Equal(t, "unbalanced snippet markers for snippet 'snippet1'", err.Error())
+	assert.Equal(t, 1, len(snippets))
+	assert.Equal(t, 1, snippets[0].start)
+	assert.Equal(t, -1, snippets[0].end)
 }
 
 func TestParseDocumentSnippetWithoutStart(t *testing.T) {
@@ -349,10 +350,11 @@ second line
 <!-- /snippet:snippet1 -->
 third line`
 
-	snippets, err := parseSnippets(s)
+	snippets, _ := parseSnippets(s)
 
-	assert.Equal(t, 0, len(snippets))
-	assert.Equal(t, "unbalanced snippet markers for snippet 'snippet1'", err.Error())
+	assert.Equal(t, 1, len(snippets))
+	assert.Equal(t, -1, snippets[0].start)
+	assert.Equal(t, 4, snippets[0].end)
 }
 
 func TestParseDocumentSnippetWithoutStartFile(t *testing.T) {
@@ -362,8 +364,9 @@ second line
 <!-- /file:snippet1 -->
 third line`
 
-	snippets, err := parseSnippets(s)
+	snippets, _ := parseSnippets(s)
 
-	assert.Equal(t, 0, len(snippets))
-	assert.Equal(t, "unbalanced snippet markers for snippet 'snippet1'", err.Error())
+	assert.Equal(t, 1, len(snippets))
+	assert.Equal(t, -1, snippets[0].start)
+	assert.Equal(t, 4, snippets[0].end)
 }

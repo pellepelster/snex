@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -55,7 +54,8 @@ func parseFile(file string) ParsedDocument {
 
 	content, err := ioutil.ReadFile(file)
 	if err != nil {
-		Fatalf(99, "unable to read file '%s' (%s)", file, err)
+		log.Printf("unable to read file '%s' (%s)", file, err)
+		return ParsedDocument{}
 	}
 
 	if !IsText(content) {
@@ -81,6 +81,10 @@ func replaceSnippets(content string, basePath string, snippetTemplate string, pa
 
 	for i := 0; i < len(snippetsToReplace); i++ {
 		snippetToReplace := snippetsToReplace[i]
+
+		if snippetToReplace.start == -1 || snippetToReplace.end == -1 {
+			continue
+		}
 
 		var prefix []string
 		var postfix []string
@@ -170,8 +174,8 @@ func getSnippet(snippet Snippet, basePath string, parsedDocuments []ParsedDocume
 var snippetStartExpression = regexp.MustCompile(`snippet:([a-zA-Z0-9_\-]*)`)
 var snippetEndExpression = regexp.MustCompile(`/snippet:([a-zA-Z0-9_\-]*)`)
 
-var fileStartExpression = regexp.MustCompile(`file:([a-zA-Z0-9_\-\/\.]*)`)
-var fileEndExpression = regexp.MustCompile(`/file:([a-zA-Z0-9_\-\/\.]*)`)
+var fileStartExpression = regexp.MustCompile(`file:([a-zA-Z0-9][a-zA-Z0-9_\-\/\.]*)`)
+var fileEndExpression = regexp.MustCompile(`/file:([a-zA-Z0-9][a-zA-Z0-9_\-\/\.]*)`)
 
 type SnippetMarker struct {
 	isSnippet bool
@@ -254,12 +258,6 @@ func parseSnippets(content string) ([]Snippet, error) {
 			}
 
 			continue
-		}
-	}
-
-	for _, snippet := range snippets {
-		if snippet.end == -1 || snippet.start == -1 {
-			return []Snippet{}, errors.New(fmt.Sprintf("unbalanced snippet markers for snippet '%s'", snippet.id))
 		}
 	}
 
