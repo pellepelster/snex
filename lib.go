@@ -50,7 +50,7 @@ func GetSnippet(id string, parsedDocuments []ParsedDocument) (string, Snippet) {
 	return "", Snippet{}
 }
 
-func parseFile(file string) ParsedDocument {
+func parseFile(file string, verbose bool) ParsedDocument {
 
 	content, err := ioutil.ReadFile(file)
 	if err != nil {
@@ -59,7 +59,9 @@ func parseFile(file string) ParsedDocument {
 	}
 
 	if !IsText(content) {
-		log.Printf("file '%s' does not look like a text file, ignoring it", file)
+	    if (verbose) {
+    		log.Printf("file '%s' does not look like a text file, ignoring it", file)
+	    }
 		return ParsedDocument{}
 	}
 

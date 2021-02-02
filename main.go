@@ -31,6 +31,10 @@ func dirExists(filename string) bool {
 }
 
 func main() {
+
+	var verboseParameter bool
+	flag.BoolVar(&verboseParameter, "verbose", false, "log detailed information about the snippet extraction process")
+
 	var snippetsParameter string
 	flag.StringVar(&snippetsParameter, "snippets", "", "directory that contains all snippets/sources")
 
@@ -106,11 +110,13 @@ func main() {
 
 	for _, file := range listAllFiles(snippetsPath) {
 		if sourcePath == file {
-			log.Printf("ignoring file '%s'", file)
+		    if (verboseParameter) {
+    			log.Printf("ignoring file '%s'", file)
+		    }
 			continue
 		}
 
-		parsedDocument := parseFile(file)
+		parsedDocument := parseFile(file, verboseParameter)
 		if len(parsedDocument.snippets) > 0 {
 			log.Printf("file '%s' contains %d snippet(s)", file, len(parsedDocument.snippets))
 		}
