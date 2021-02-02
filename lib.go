@@ -81,6 +81,10 @@ func replaceSnippets(content string, basePath string, snippetTemplate string, pa
 		Fatalf(5, "%s", err)
 	}
 
+	if len(snippetsToReplace) == 0 {
+		return content
+	}
+
 	for i := 0; i < len(snippetsToReplace); i++ {
 		snippetToReplace := snippetsToReplace[i]
 
