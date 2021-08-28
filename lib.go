@@ -126,7 +126,12 @@ func replaceSnippets(content string, basePath string, snippetTemplate string, pa
 
 		templateData := TemplateData{Content: strings.Join(snippetToInsert.content, "\n")}
 
-		templateData.Filename = strings.TrimPrefix(filename, basePath)
+		dir, err := os.Getwd()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		templateData.Filename = strings.TrimPrefix(filename, dir)
 		templateData.Filename = strings.TrimPrefix(templateData.Filename, "/")
 
 		if snippetToInsert.filename != "" {

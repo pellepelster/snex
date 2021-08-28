@@ -1,7 +1,7 @@
 source 1.1
 <!-- snippet:snippet1 -->
 
-snippet1.txt#L3-L3"
+test/template_in_file/snippets/snippet1.txt#L3-L3"
 
 snippet 1 content
 
@@ -9,7 +9,7 @@ snippet 1 content
 source 1.2
 <!-- snippet:snippet2 -->
 
-nested_folder/snippet2.txt#L3-L3"
+test/template_in_file/snippets/nested_folder/snippet2.txt#L3-L3"
 
 snippet 2 content
 
