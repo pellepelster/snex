@@ -1,9 +1,0 @@
-source 1.1
-<!-- snippet:snippet1 -->
-snippet 1 content
-<!-- /snippet:snippet1 -->
-source 1.2
-<!-- snippet:snippet2 -->
-snippet 2 content
-<!-- /snippet:snippet2 -->
-source 1.3

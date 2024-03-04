@@ -1,6 +1,0 @@
-{{ if .IsFullFile }}
-{{.Filename}}
-{{ else }}
-{{.Filename}}#L{{.Start}}-L{{.End}}"
-{{ end }}
-{{.Content}}

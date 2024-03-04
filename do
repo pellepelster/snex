@@ -4,53 +4,46 @@ set -eu
 
 DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 
+function task_run {
+    go run "${DIR}/cmd" $@
+}
+
 function task_build {
-  export GOOS=linux GOARCH=amd64
-  go build -o snex_${GOOS}_${GOARCH}
 
-  export GOOS=darwin GOARCH=amd64
-  go build -o snex_${GOOS}_${GOARCH}
+  rm -rf "${DIR}/build"
+  mkdir -p "${DIR}/build"
 
-  export GOOS=windows GOARCH=amd64
-  go build -o snex_${GOOS}_${GOARCH}
+  declare -A targets=(["linux"]="amd64,386,arm64", ["darwin"]="arm64,arm64", ["windows"]="arm64,amd64,386", ["freebsd"]="amd64")
+
+  for platform in "${!targets[@]}"
+  do
+    local archs=${targets[$platform]}
+    for arch in ${archs//,/ }; do
+      export GOOS="${platform}"
+      export GOARCH="${arch}"
+      go build -o "${DIR}/build/snex_${GOOS}_${GOARCH}" "${DIR}/cmd"
+    done
+  done
 }
 
 function task_test {
-    go test
-    task_build
+    go test -v "${DIR}/..."
+    chmod +x ${DIR}/build/snex*
 
-    rm -rf "${DIR}/test/distinct_folders/target"
-    mkdir -p "${DIR}/test/distinct_folders/target"
+    test_return_code 2 ""
+    test_return_code 3 "non-existent-folder"
+    test_return_code 4 "--show-default-templates"
 
-    test_return_code 1
-    test_return_code 1 -source non_empty -target non_empty
-    test_return_code 1 -snippets non_empty -target non_empty
-    test_return_code 1 -snippets non_empty -source non_empty
-    test_return_code 2 -source non_existing -target non_existing -snippets non_existing
-    test_return_code 2 -source ${DIR}/test/distinct_folders/source -target non_existing -snippets non_existing
-    test_return_code 3 -source ${DIR}/test/distinct_folders/source -target ${DIR}/test/distinct_folders/snippets -snippets ${DIR}/test/distinct_folders/snippets
-    test_return_code 3 -source ${DIR}/test/distinct_folders/source -target ${DIR}/test/distinct_folders/snippets/nested_folder -snippets ${DIR}/test/distinct_folders/snippets
-    test_return_code 0 -source ${DIR}/test/distinct_folders/source -target ${DIR}/test/distinct_folders/target -snippets ${DIR}/test/distinct_folders/snippets
-    diff "${DIR}/test/distinct_folders/target" "${DIR}/test/distinct_folders/expected"
+    rm -rf "${DIR}/test-output/"
+    mkdir -p "${DIR}/test-output/"
 
-    rm -rf "${DIR}/test/single_source_inside_snippets_no_target/snippets"
-    cp -rv "${DIR}/test/single_source_inside_snippets_no_target/template" "${DIR}/test/single_source_inside_snippets_no_target/snippets"
+    cp -r "${DIR}/test/testbed1/input" "${DIR}/test-output/testbed1"
+    go run "${DIR}/cmd" "${DIR}/test-output/testbed1"
+    diff "${DIR}/test-output/testbed1/README.md" "${DIR}/test/testbed1/expected/README.md"
 
-    test_return_code 0 -source ${DIR}/test/single_source_inside_snippets_no_target/snippets/source1.txt -snippets ${DIR}/test/single_source_inside_snippets_no_target/snippets
-    diff "${DIR}/test/single_source_inside_snippets_no_target/snippets" "${DIR}/test/single_source_inside_snippets_no_target/expected"
-
-    rm -rf "${DIR}/test/template_in_file/target"
-    mkdir -p "${DIR}/test/template_in_file/target"
-    test_return_code 0 -template-file ${DIR}/test/template_in_file/test.template -source ${DIR}/test/template_in_file/source -target ${DIR}/test/template_in_file/target -snippets ${DIR}/test/template_in_file/snippets
-    diff "${DIR}/test/template_in_file/target" "${DIR}/test/template_in_file/expected"
-
-    mkdir -p "${DIR}/test/file_include_does_not_exist/target"
-    mkdir -p "${DIR}/test/file_include_does_not_exist/source"
-    test_return_code 4 -source ${DIR}/test/file_include_does_not_exist/source -target ${DIR}/test/file_include_does_not_exist/target -snippets ${DIR}/test/file_include_does_not_exist/snippets
-
-    mkdir -p "${DIR}/test/unbalanced_snippet_markers/target"
-    test_return_code 0 -source ${DIR}/test/unbalanced_snippet_markers/source -target ${DIR}/test/unbalanced_snippet_markers/target -snippets ${DIR}/test/unbalanced_snippet_markers/snippets
-    diff "${DIR}/test/unbalanced_snippet_markers/target" "${DIR}/test/unbalanced_snippet_markers/expected"
+    cp -r "${DIR}/test/testbed2/input" "${DIR}/test-output/testbed2"
+    go run "${DIR}/cmd" --template "start\n{{.Content}}\nend" "${DIR}/test-output/testbed2"
+    diff "${DIR}/test-output/testbed2/README.md" "${DIR}/test/testbed2/expected/README.md"
 }
 
 function test_return_code {
@@ -58,7 +51,8 @@ function test_return_code {
     set +e
     local expected_return_code="${1:-}"
     shift || true
-    "${DIR}/snex_linux_amd64" "$@"
+
+    ${DIR}/build/snex_linux_amd64 $@
 
     local return_code=$?
     if [ ${return_code} -ne ${expected_return_code} ]; then
@@ -76,7 +70,8 @@ function task_usage {
 arg=${1:-}
 shift || true
 case ${arg} in
-  test) task_test "$@" ;;
-  build) task_build "$@" ;;
+  test) task_test $@ ;;
+  build) task_build $@ ;;
+  run) task_run $@ ;;
   *) task_usage ;;
 esac

@@ -1,8 +1,4 @@
 .idea/
-snex
 vendor/
-test/single_source_inside_snippets_no_target/snippets/
-test/distinct_folders/target
-/snex_darwin_amd64
-/snex_linux_amd64
-/snex_windows_amd64
+/test-output/
+/build/
