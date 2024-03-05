@@ -5,9 +5,16 @@
 snex keep the code snippets inside your documentation in sync with real code from your sources. The issues this solves is that source examples in documentation tend to get outdated very quick. By pulling the snippets directly from a working project you can make sure the source examples used in you docs are always up to date.
 
 ## Downloads
-* Linux (AMD64) [snex_linux_amd64](https://github.com/pellepelster/snex/releases/latest/download/snex_linux_amd64)
-* Windows (AMD64) [snex_windows_amd64](https://github.com/pellepelster/snex/releases/latest/download/snex_windows_amd64)
-* Darwin (AMD64) [snex_darwin_amd64](https://github.com/pellepelster/snex/releases/latest/download/snex_darwin_amd64)
+
+* Linux (amd64) [snex_linux_amd64](https://github.com/pellepelster/snex/releases/latest/download/snex_linux_amd64)
+* Linux (arm64) [snex_linux_arm64](https://github.com/pellepelster/snex/releases/latest/download/snex_linux_arm64)
+* Linux (386) [snex_linux_386](https://github.com/pellepelster/snex/releases/latest/download/snex_linux_386)
+* Windows (amd64) [snex_windows_amd64](https://github.com/pellepelster/snex/releases/latest/download/snex_windows_amd64)
+* Windows (arm64) [snex_windows_arm64](https://github.com/pellepelster/snex/releases/latest/download/snex_windows_arm64)
+* Windows (386) [snex_windows_386](https://github.com/pellepelster/snex/releases/latest/download/snex_windows_386)
+* Darwin (amd64) [snex_darwin_amd64](https://github.com/pellepelster/snex/releases/latest/download/snex_darwin_amd64)
+* Darwin (arm64) [snex_darwin_arm64](https://github.com/pellepelster/snex/releases/latest/download/snex_darwin_arm64)
+* Freebsd (amd64) [snex_freebsd_amd64](https://github.com/pellepelster/snex/releases/latest/download/snex_freebsd_amd64)
 
 ## How it works
 `snex` works line based on text files and iterates through all files inside one or more folders. It searches for snippet start- and end-markers and replaces all content between those markers with the referenced snippet.

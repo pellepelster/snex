@@ -13,7 +13,7 @@ function task_build {
   rm -rf "${DIR}/build"
   mkdir -p "${DIR}/build"
 
-  declare -A targets=(["linux"]="amd64,386,arm64", ["darwin"]="arm64,arm64", ["windows"]="arm64,amd64,386", ["freebsd"]="amd64")
+  declare -A targets=(["linux"]="amd64,386,arm64", ["darwin"]="arm64,amd64", ["windows"]="arm64,amd64,386", ["freebsd"]="amd64")
 
   for platform in "${!targets[@]}"
   do
