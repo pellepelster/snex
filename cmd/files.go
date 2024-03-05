@@ -83,6 +83,7 @@ func fileReadHeadBytes(file string, n int) []byte {
 func processFiles(folderOrFiles []string, template string) error {
 	var files []string
 	for _, folderOrFile := range folderOrFiles {
+		log.Infof("collecting files from '%s'", folderOrFile)
 
 		for _, file := range append(files, listAllFiles(folderOrFile)...) {
 			headBytes := fileReadHeadBytes(path.Join(file), 1024)
@@ -124,11 +125,17 @@ func processFiles(folderOrFiles []string, template string) error {
 	}
 
 	for _, document := range documents {
-		log.Infof("listing snippets for '%s'", document.File)
+		snippetCount := pkg.CountSnippets(document)
 
-		for _, line := range document.Lines {
-			if line.Snippet != nil && line.Snippet.IsSnippet && line.Snippet.IsStart {
-				log.Infof("\t%s", line.Snippet.Id)
+		if snippetCount == 0 {
+			log.Infof("no snippets found in '%s'", document.File)
+		} else {
+			log.Infof("found %d snippets in '%s'", snippetCount, document.File)
+
+			for _, line := range document.Lines {
+				if line.Snippet != nil && line.Snippet.IsSnippet && line.Snippet.IsStart {
+					log.Infof("\t%s", line.Snippet.Id)
+				}
 			}
 		}
 	}
@@ -154,6 +161,8 @@ func processFiles(folderOrFiles []string, template string) error {
 			return err
 		}
 	}
+
+	log.Info("snippets successfully replaced")
 
 	return nil
 }

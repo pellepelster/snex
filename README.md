@@ -105,7 +105,7 @@ snex --template 'begin\n{{.Content}}\nend' ./
 To show the list of default templates run
 
 ```shell
-snex --show-templates
+snex show-templates
 ```
 
 

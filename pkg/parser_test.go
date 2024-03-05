@@ -189,7 +189,7 @@ more text`
 
 	errors := ValidateDocuments([]ParsedDocument{document1, document2})
 	assert.Equal(t, 1, len(errors))
-	assert.Equal(t, "snippet 'id1' found in more than one document", errors[0].Error())
+	assert.Equal(t, "snippet 'id1' found in more than one document (file1, file2)", errors[0].Error())
 }
 
 func TestValidateDocumentsStartEndMultipleDocumentsInsert(t *testing.T) {

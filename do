@@ -30,19 +30,27 @@ function task_test {
     go test -v "${DIR}/..."
     chmod +x ${DIR}/build/snex*
 
-    test_return_code 2 ""
-    test_return_code 3 "non-existent-folder"
-    test_return_code 4 "--show-templates"
+    test_return_code 5 replace non-existent-folder
+    test_return_code 4 show-templates
 
     rm -rf "${DIR}/test-output/"
     mkdir -p "${DIR}/test-output/"
 
+    # explicit replace
     cp -r "${DIR}/test/testbed1/input" "${DIR}/test-output/testbed1"
-    go run "${DIR}/cmd" "${DIR}/test-output/testbed1"
+    go run "${DIR}/cmd" replace "${DIR}/test-output/testbed1"
+    diff "${DIR}/test-output/testbed1/README.md" "${DIR}/test/testbed1/expected/README.md"
+
+    rm -rf "${DIR}/test-output/"
+    mkdir -p "${DIR}/test-output/"
+
+    # default command
+    cp -r "${DIR}/test/testbed1/input" "${DIR}/test-output/testbed1"
+    go run "${DIR}/cmd" replace "${DIR}/test-output/testbed1"
     diff "${DIR}/test-output/testbed1/README.md" "${DIR}/test/testbed1/expected/README.md"
 
     cp -r "${DIR}/test/testbed2/input" "${DIR}/test-output/testbed2"
-    go run "${DIR}/cmd" --template "start\n{{.Content}}\nend" "${DIR}/test-output/testbed2"
+    go run "${DIR}/cmd" replace --template "start\n{{.Content}}\nend" "${DIR}/test-output/testbed2"
     diff "${DIR}/test-output/testbed2/README.md" "${DIR}/test/testbed2/expected/README.md"
 }
 

@@ -335,7 +335,7 @@ func validateSnippetsMultipleDocuments(documents []ParsedDocument) []error {
 	var errors []error
 	for id, documents := range snippets {
 		if len(documents) > 1 {
-			errors = append(errors, fmt.Errorf("snippet '%s' found in more than one document", id))
+			errors = append(errors, fmt.Errorf("snippet '%s' found in more than one document (%s)", id, strings.Join(documents, ", ")))
 		}
 	}
 
@@ -371,4 +371,15 @@ func validateDuplicates(documents []ParsedDocument, message string, predicate Sn
 	}
 
 	return []error{}
+}
+
+func CountSnippets(document ParsedDocument) int {
+	count := 0
+	for _, line := range document.Lines {
+		if line.Snippet != nil && line.Snippet.IsSnippet && line.Snippet.IsStart {
+			count++
+		}
+	}
+
+	return count
 }
