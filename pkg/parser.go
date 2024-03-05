@@ -3,8 +3,6 @@ package pkg
 import (
 	"bufio"
 	"fmt"
-	"regexp"
-	"slices"
 	"strings"
 )
 
@@ -35,56 +33,13 @@ type SnippetMarker struct {
 
 type SnippetMarkerPredicate func(marker *SnippetMarker) bool
 
-var snippetStartExpression = regexp.MustCompile(`[^\s]*snippet\s*:\s*([a-zA-Z0-9_\-]*)\s*`)
-var snippetEndExpression = regexp.MustCompile(`[^\s]*/snippet\s*:\s*([a-zA-Z0-9_\-]*)\s*`)
-
-var insertSnippetStartExpression = regexp.MustCompile(`[^\s]*insertSnippet\s*:\s*([a-zA-Z0-9_\-]*)\s*`)
-var insertSnippetEndExpression = regexp.MustCompile(`[^\s]*/insertSnippet\s*:\s*([a-zA-Z0-9_\-]*)\s*`)
-
-var insertFileStartExpression = regexp.MustCompile(`[^\s]*insertFile\s*:\s*([^\s]*)\s*`)
-var insertFileEndExpression = regexp.MustCompile(`[^\s]*/insertFile\s*:\s*([^\s]*)\s*`)
-
-func parseMarker(line string) *SnippetMarker {
-	snippetEnd := snippetEndExpression.FindStringSubmatch(line)
-	if len(snippetEnd) == 2 {
-		return &SnippetMarker{IsSnippet: true, IsEnd: true, Id: snippetEnd[1]}
-	}
-
-	snippetStart := snippetStartExpression.FindStringSubmatch(line)
-	if len(snippetStart) == 2 {
-		return &SnippetMarker{IsSnippet: true, IsStart: true, Id: snippetStart[1]}
-	}
-
-	insertSnippetEnd := insertSnippetEndExpression.FindStringSubmatch(line)
-	if len(insertSnippetEnd) == 2 {
-		return &SnippetMarker{IsInsertSnippet: true, IsEnd: true, Id: insertSnippetEnd[1]}
-	}
-
-	insertSnippetStart := insertSnippetStartExpression.FindStringSubmatch(line)
-	if len(insertSnippetStart) == 2 {
-		return &SnippetMarker{IsInsertSnippet: true, IsStart: true, Id: insertSnippetStart[1]}
-	}
-
-	fileEnd := insertFileEndExpression.FindStringSubmatch(line)
-	if len(fileEnd) == 2 {
-		return &SnippetMarker{IsInsertFile: true, IsEnd: true, Id: fileEnd[1]}
-	}
-
-	fileStart := insertFileStartExpression.FindStringSubmatch(line)
-	if len(fileStart) == 2 {
-		return &SnippetMarker{IsInsertFile: true, IsStart: true, Id: fileStart[1]}
-	}
-
-	return nil
-}
-
 func ParseDocument(document Document) (ParsedDocument, error) {
 	var lines []DocumentLine
 	scanner := bufio.NewScanner(strings.NewReader(document.Content))
 
 	lineNumber := 0
 	for scanner.Scan() {
-		lines = append(lines, DocumentLine{line: scanner.Text(), number: lineNumber, Snippet: parseMarker(scanner.Text())})
+		lines = append(lines, DocumentLine{line: scanner.Text(), number: lineNumber, Snippet: ParseMarker(scanner.Text())})
 		lineNumber++
 	}
 	lineNumber++
@@ -99,16 +54,19 @@ func ParseDocument(document Document) (ParsedDocument, error) {
 func ValidateDocuments(documents []ParsedDocument) []error {
 	var errors []error
 
-	errors = append(errors, validateNoInsertFileSelfReference(documents)...)
-	errors = append(errors, validateSnippetsMultipleDocuments(documents)...)
 	errors = append(errors, validateSnippetMarkerDuplicates(documents)...)
+	if len(errors) > 0 {
+		return errors
+	}
+
+	errors = append(errors, validateNoInsertFileSelfReference(documents)...)
 	errors = append(errors, validateMarkerStartEnd(documents)...)
 	errors = append(errors, validateSnippetsMissing(documents)...)
 
 	return errors
 }
 
-func getContentForSnippet(documents []ParsedDocument, id string) []string {
+func getSnippetLines(documents []ParsedDocument, id string) []string {
 	var foundSnippet = false
 
 	for _, document := range documents {
@@ -119,7 +77,7 @@ func getContentForSnippet(documents []ParsedDocument, id string) []string {
 				foundSnippet = true
 			}
 
-			if line.Snippet != nil && foundSnippet && line.Snippet.IsSnippet && line.Snippet.Id == id && line.Snippet.IsEnd {
+			if line.Snippet != nil && foundSnippet && line.Snippet.IsSnippet && line.Snippet.IsEnd {
 				return lines
 			}
 
@@ -181,7 +139,7 @@ func ReplaceSnippets(documents []ParsedDocument, template string) ([]Document, e
 			if snippet != nil && !isSnippet && snippet.IsStart {
 
 				if snippet.IsInsertSnippet {
-					snippetLines := getContentForSnippet(documents, snippet.Id)
+					snippetLines := getSnippetLines(documents, snippet.Id)
 					renderedLines, err := executeTemplateWithDefault(snippetLines, document.File, template)
 					if err != nil {
 						return nil, err
@@ -223,30 +181,22 @@ func validateSnippetMarkerDuplicates(documents []ParsedDocument) []error {
 		return marker.IsSnippet && marker.IsStart
 	})...)
 
-	errors = append(errors, validateDuplicates(documents, "end marker for snippet '%s' found more than once", func(marker *SnippetMarker) bool {
-		return marker.IsSnippet && marker.IsEnd
-	})...)
-
 	return errors
 }
 
 func validateMarkerStartEnd(documents []ParsedDocument) []error {
-
 	var errors []error
 
-	snippets := collectSnippets(documents, func(marker *SnippetMarker) bool {
-		return marker.IsSnippet
-	})
+	for _, document := range documents {
 
-	for id, lines := range snippets {
-
-		if countStartMarkers(lines) == 1 && countEndMarkers(lines) == 0 {
-			errors = append(errors, fmt.Errorf("snippet '%s' has no end marker", id))
+		if countStartMarkers(document.Lines) > countEndMarkers(document.Lines) {
+			errors = append(errors, fmt.Errorf("not all start markers are closed in '%s'", document.File))
 		}
 
-		if countStartMarkers(lines) == 0 && countEndMarkers(lines) == 1 {
-			errors = append(errors, fmt.Errorf("snippet '%s' has no start marker", id))
+		if countStartMarkers(document.Lines) < countEndMarkers(document.Lines) {
+			errors = append(errors, fmt.Errorf("too many end markers found in '%s'", document.File))
 		}
+
 	}
 
 	return errors
@@ -254,13 +204,13 @@ func validateMarkerStartEnd(documents []ParsedDocument) []error {
 
 func countStartMarkers(lines []DocumentLine) int {
 	return countLines(lines, func(line DocumentLine) bool {
-		return line.Snippet.IsStart
+		return line.Snippet != nil && line.Snippet.IsStart
 	})
 }
 
 func countEndMarkers(lines []DocumentLine) int {
 	return countLines(lines, func(line DocumentLine) bool {
-		return line.Snippet.IsEnd
+		return line.Snippet != nil && line.Snippet.IsEnd
 	})
 }
 
@@ -307,35 +257,6 @@ func validateNoInsertFileSelfReference(documents []ParsedDocument) []error {
 			if snippet != nil && snippet.IsInsertFile && snippet.IsStart && snippet.Id == document.File {
 				errors = append(errors, fmt.Errorf("insert file snippet '%s' references itself", document.File))
 			}
-		}
-	}
-
-	return errors
-}
-
-func validateSnippetsMultipleDocuments(documents []ParsedDocument) []error {
-	snippets := make(map[string][]string)
-
-	for _, document := range documents {
-		for _, line := range document.Lines {
-			if line.Snippet != nil && line.Snippet.IsSnippet {
-				id := line.Snippet.Id
-				val, hasSnippet := snippets[id]
-				if hasSnippet {
-					if !slices.Contains(val, document.File) {
-						snippets[id] = append(val, document.File)
-					}
-				} else {
-					snippets[id] = []string{document.File}
-				}
-			}
-		}
-	}
-
-	var errors []error
-	for id, documents := range snippets {
-		if len(documents) > 1 {
-			errors = append(errors, fmt.Errorf("snippet '%s' found in more than one document (%s)", id, strings.Join(documents, ", ")))
 		}
 	}
 

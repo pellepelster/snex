@@ -5,25 +5,6 @@ import (
 	"testing"
 )
 
-func TestParseMarkersEmptyLine(t *testing.T) {
-	assert.Zero(t, parseMarker(""))
-}
-
-func TestParseMarkersSnippetStart(t *testing.T) {
-
-	lines := []string{"snippet:id1", "snippet :id1", "snippet: id1", "snippet : id1", "prefix snippet: id1", "snippet: id1 postfix", "prefix snippet: id1 postfix"}
-
-	for _, line := range lines {
-		snippet := parseMarker(line)
-		assert.NotZero(t, snippet, line)
-		assert.True(t, snippet.IsStart)
-		assert.True(t, snippet.IsSnippet)
-		assert.False(t, snippet.IsInsertFile)
-		assert.False(t, snippet.IsEnd)
-		assert.Equal(t, "id1", snippet.Id)
-	}
-}
-
 func TestParseDocumentEmptyDocument(t *testing.T) {
 	document, err := ParseDocument(Document{File: "file1", Content: ""})
 	assert.NoError(t, err)
@@ -33,9 +14,9 @@ func TestParseDocumentEmptyDocument(t *testing.T) {
 func TestParseDocumentFullSnippet(t *testing.T) {
 
 	content := `some preface
-snippet: id1
+snippet[id1]
 some Content
-/snippet: id1
+/snippet
 more text`
 
 	document, err := ParseDocument(Document{File: "file1", Content: content})
@@ -62,9 +43,9 @@ line2
 func TestValidateDocumentsFullSnippet(t *testing.T) {
 
 	content := `some preface
-snippet: id1
+snippet[id1]
 some Content
-/snippet: id1
+/snippet
 more text`
 
 	document, err := ParseDocument(Document{File: "file1", Content: content})
@@ -77,11 +58,11 @@ more text`
 func TestValidateDocumentsDuplicateSnippetStart(t *testing.T) {
 
 	content := `some preface
-snippet: id1
+snippet[id1]
 something else
-snippet: id1
+snippet[id1]
 some Content
-/snippet: id1
+/snippet
 more text`
 
 	document, err := ParseDocument(Document{File: "file1", Content: content})
@@ -95,11 +76,11 @@ more text`
 func TestValidateDocumentsDuplicateSnippetEnd(t *testing.T) {
 
 	content := `some preface
-snippet: id1
+snippet[id1]
 something else
-/snippet: id1
+/snippet
 some Content
-/snippet: id1
+/snippet
 more text`
 
 	document, err := ParseDocument(Document{File: "file1", Content: content})
@@ -107,13 +88,13 @@ more text`
 
 	errors := ValidateDocuments([]ParsedDocument{document})
 	assert.Equal(t, 1, len(errors))
-	assert.Equal(t, "end marker for snippet 'id1' found more than once", errors[0].Error())
+	assert.Equal(t, "too many end markers found in 'file1'", errors[0].Error())
 }
 
 func TestValidateDocumentsNoSnippetEnd(t *testing.T) {
 
 	content := `some preface
-snippet: id1
+snippet[id1]
 more text`
 
 	document, err := ParseDocument(Document{File: "file1", Content: content})
@@ -121,13 +102,13 @@ more text`
 
 	errors := ValidateDocuments([]ParsedDocument{document})
 	assert.Equal(t, 1, len(errors))
-	assert.Equal(t, "snippet 'id1' has no end marker", errors[0].Error())
+	assert.Equal(t, "not all start markers are closed in 'file1'", errors[0].Error())
 }
 
 func TestValidateDocumentsNoSnippetStart(t *testing.T) {
 
 	content := `some preface
-/snippet: id1
+/snippet
 more text`
 
 	document, err := ParseDocument(Document{File: "file1", Content: content})
@@ -135,15 +116,36 @@ more text`
 
 	errors := ValidateDocuments([]ParsedDocument{document})
 	assert.Equal(t, 1, len(errors))
-	assert.Equal(t, "snippet 'id1' has no start marker", errors[0].Error())
+	assert.Equal(t, "too many end markers found in 'file1'", errors[0].Error())
+}
+
+func TestCountMarkers(t *testing.T) {
+
+	content := `
+# Example 1
+
+## Include snippet1
+
+<!-- insertSnippet[snippet1] -->
+<!-- /insertSnippet -->
+
+## Include full file
+
+<!-- insertFile[file1.go] -->
+<!-- /insertFile -->
+`
+	document, err := ParseDocument(Document{File: "file1", Content: content})
+	assert.NoError(t, err)
+	assert.Equal(t, 2, countStartMarkers(document.Lines))
+	assert.Equal(t, 2, countEndMarkers(document.Lines))
 }
 
 func TestValidateDocumentsInsertFileSelfReference(t *testing.T) {
 
 	content := `lorem 
-insertFile: file1
+insertFile[file1]
 content
-/insertFile: file1
+/insertFile
 ipsum`
 
 	document, err := ParseDocument(Document{File: "file1", Content: content})
@@ -157,9 +159,9 @@ ipsum`
 func TestValidateDocumentsSnippetMissing(t *testing.T) {
 
 	content := `lorem 
-insertSnippet: snippet1
+insertSnippet[snippet1] 
 content
-/insertSnippet: snippet1
+/insertSnippet
 ipsum`
 
 	document, err := ParseDocument(Document{File: "file1", Content: content})
@@ -173,12 +175,12 @@ ipsum`
 func TestValidateDocumentsStartEndMultipleDocuments(t *testing.T) {
 
 	content1 := `some preface
-snippet: id1
+snippet[id1]
 some Content
 more text`
 
 	content2 := `some preface
-/snippet: id1
+/snippet
 more text`
 
 	document1, err := ParseDocument(Document{File: "file1", Content: content1})
@@ -188,22 +190,23 @@ more text`
 	assert.NoError(t, err)
 
 	errors := ValidateDocuments([]ParsedDocument{document1, document2})
-	assert.Equal(t, 1, len(errors))
-	assert.Equal(t, "snippet 'id1' found in more than one document (file1, file2)", errors[0].Error())
+	assert.Equal(t, 2, len(errors))
+	assert.Equal(t, "not all start markers are closed in 'file1'", errors[0].Error())
+	assert.Equal(t, "too many end markers found in 'file2'", errors[1].Error())
 }
 
 func TestValidateDocumentsStartEndMultipleDocumentsInsert(t *testing.T) {
 
 	content1 := `some preface
-snippet: id1
+snippet[id1]
 some Content
-/snippet: id1
+/snippet
 more text`
 
 	content2 := `some preface
-insertSnippet: id1
+insertSnippet[id1]
 lorem ipsum
-/insertSnippet: id1
+/insertSnippet
 more text`
 
 	document1, err := ParseDocument(Document{File: "file1", Content: content1})
@@ -219,21 +222,21 @@ more text`
 func TestReplaceSnippets(t *testing.T) {
 
 	source := `some preface
-snippet: id1
+snippet[id1]
 some new Content
-/snippet: id1
+/snippet
 more text`
 
 	target := `lorem
-insertSnippet: id1
+insertSnippet[id1]
 some old Content
-/insertSnippet: id1
+/insertSnippet
 ipsum`
 
 	targetReplaced := `lorem
-insertSnippet: id1
+insertSnippet[id1]
 some new Content
-/insertSnippet: id1
+/insertSnippet
 ipsum`
 
 	document1, err := ParseDocument(Document{File: "source", Content: source})
@@ -251,6 +254,23 @@ ipsum`
 	assert.Equal(t, targetReplaced, documents[1].Content)
 }
 
+func TestGetSnippetLines(t *testing.T) {
+
+	source := `some preface
+snippet[id1]
+some new content
+/snippet
+more text`
+
+	document, err := ParseDocument(Document{File: "source", Content: source})
+	assert.NoError(t, err)
+
+	lines := getSnippetLines([]ParsedDocument{document}, "id1")
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(lines))
+	assert.Equal(t, "some new content", lines[0])
+}
+
 func TestReplaceFiles(t *testing.T) {
 
 	source := `yolo1
@@ -258,17 +278,17 @@ yolo2
 yolo3`
 
 	target := `lorem
-insertFile: source
+insertFile[source]
 some old Content
-/insertFile: source
+/insertFile
 ipsum`
 
 	targetReplaced := `lorem
-insertFile: source
+insertFile[source]
 yolo1
 yolo2
 yolo3
-/insertFile: source
+/insertFile
 ipsum`
 
 	document1, err := ParseDocument(Document{File: "source", Content: source})
@@ -290,23 +310,23 @@ ipsum`
 func TestReplaceSnippetsTrailingNewline(t *testing.T) {
 
 	source := `some preface
-snippet: id1
+snippet[id1]
 some new Content
-/snippet: id1
+/snippet
 more text
 `
 
 	target := `lorem
-insertSnippet: id1
+insertSnippet[id1]
 some old Content
-/insertSnippet: id1
+/insertSnippet
 ipsum
 `
 
 	targetReplaced := `lorem
-insertSnippet: id1
+insertSnippet[id1]
 some new Content
-/insertSnippet: id1
+/insertSnippet
 ipsum
 `
 
@@ -330,23 +350,23 @@ func TestReplaceSnippetsLeadingNewline(t *testing.T) {
 
 	source := `
 some preface
-snippet: id1
+snippet[id1]
 some new Content
-/snippet: id1
+/snippet
 more text`
 
 	target := `
 lorem
-insertSnippet: id1
+insertSnippet[id1]
 some old Content
-/insertSnippet: id1
+/insertSnippet
 ipsum`
 
 	targetReplaced := `
 lorem
-insertSnippet: id1
+insertSnippet[id1]
 some new Content
-/insertSnippet: id1
+/insertSnippet
 ipsum`
 
 	document1, err := ParseDocument(Document{File: "source", Content: source})

@@ -2,7 +2,7 @@
 
 # SNippet EXtractor (snex)
 
-snex keeps the code snippets inside your documentation in sync with real code from your sources. The issue this solves is that source examples in documentation tend to get outdated very quick. By pulling the snippets directly from a working project you can make sure the source examples used in you docs are always up-to-date and functional.
+`snex` keeps the code snippets inside your documentation in sync with real code from your sources. The issue this solves is that source examples in documentation tend to get outdated very quick. By pulling the snippets directly from a working project you can make sure the source examples used in you docs are always up-to-date and functional.
 
 ## Downloads
 
@@ -25,26 +25,26 @@ Those markers are language agnostic, so you can embed them in a way that the sou
 e.g. for Java
 
 ```java
-// snippet: snippet1
+// snippet[snippet1]
 ```
 
 or inside of HTML
 
 ```html
-<!-- snippet: snippet1 -->
+<!-- snippet[snippet1] -->
 ```
 
 There are three types of markers available that must be opened and closed like HTML tags
 
-* `snippet: ${id}` and `/snippet: ${id}` define the beginning and end of a snippet that can be inserted somewhere else
+* `snippet[${id}]` and `/snippet` define the beginning and end of a snippet that can be inserted somewhere else
 
-* `insertSnippet: ${id}` and `/insertSnippet: ${id}` define the bounds where the snipped with the id `${id}` will be inserted
+* `insertSnippet[${id}]` and `/insertSnippet` define the bounds where the snipped with the id `${id}` will be inserted
 
-* `insertFile: ${file}` and `/insertFile: ${file}` define the bounds where a whole file will be inserted
+* `insertFile[${file}]` and `/insertFile` define the bounds where the whole file `${file}` will be inserted
 
 ### Example 1
 
-Given the following files (see example folder `examples/example1`)
+Given the following files (see also example folder `examples/example1`)
 
 **examples/example1/README.md**
 ```markdown
@@ -52,13 +52,13 @@ Given the following files (see example folder `examples/example1`)
 
 ## Include snippet1
 
-<!--- insertSnippet: snippet1 -->
-<!--- /insertSnippet: snippet1 -->
+<!-- insertSnippet[snippet1] -->
+<!-- /insertSnippet -->
 
 ## Include full file
 
-<!--- insertFile: file1.go -->
-<!--- /insertFile: file1.go -->
+<!-- insertFile[file1.go] -->
+<!-- /insertFile -->
 ```
 
 **examples/example1/src/snippets.go**
@@ -66,9 +66,9 @@ Given the following files (see example folder `examples/example1`)
 package input
 
 func snippet1() {
-	// snippet: snippet1
+	// snippet[snippet1]
 	println("snippet1")
-	//  /snippet: snippet1
+	//  /snippet
 }
 ```
 
@@ -95,15 +95,15 @@ The `README.md` looks like this
 
 ## Include snippet1
 
-<!--- insertSnippet: snippet1 -->
+<!-- insertSnippet[snippet1] -->
 ```
 println("snippet1")
 ```
-<!--- /insertSnippet: snippet1 -->
+<!-- /insertSnippet -->
 
 ## Include full file
 
-<!--- insertFile: file1.go -->
+<!-- insertFile[file1.go] -->
 ```
 package input
 
@@ -112,7 +112,7 @@ func includeFullFile() {
 }
 
 ```
-<!--- /insertFile: file1.go -->
+<!-- /insertFile -->
 ````
 
 `snex` will keep the original markers to ensure it can be re-run anytime on the documentation sources. 
