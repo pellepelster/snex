@@ -3,57 +3,80 @@ name: snex
 on:
   push:
 
+permissions:
+  id-token: write
+  contents: write
+  packages: write
+
 jobs:
 
   build:
-    name: Build
     runs-on: ubuntu-latest
     steps:
 
-    - name: Set up Go 1.x
-      uses: actions/setup-go@v5
-      with:
-        go-version: ^1.21
-      id: go
+      - name: set up go 1.x
+        uses: actions/setup-go@v5
+        with:
+          go-version: ^1.21
+        id: go
 
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v4
+      - name: check out code
+        uses: actions/checkout@v4
 
-    - name: Build
-      run: ./do build
+      - name: build
+        run: ./do build
 
-    - name: Archive Build Artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: build
-        path: |
-          build
+      - name: archive build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: |
+            build
 
   test:
-    name: Test
     needs:
       - build
     runs-on: ubuntu-latest
     steps:
 
-    - name: Set up Go 1.x
-      uses: actions/setup-go@v5
-      with:
-        go-version: ^1.21
-      id: go
+      - name: set up go 1.x
+        uses: actions/setup-go@v5
+        with:
+          go-version: ^1.21
+        id: go
 
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v4
+      - name: check out code
+        uses: actions/checkout@v4
 
-    - name: Download build artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: build
-        path: build
+      - name: download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: build
 
-    - name: Debug
-      run: ls -R
+      - name: debug
+        run: ls -r
 
-    - name: Test
-      run: ./do test
+      - name: test
+        run: ./do test
 
+  release:
+    runs-on: ubuntu-latest
+    if: startswith(github.ref, 'refs/tags/v')
+    needs:
+      - test
+    steps:
+      - name: check out code
+        uses: actions/checkout@v4
+
+      - name: download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build
+
+      - name: release artifacts
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: CHANGELOG.md
+          files: |
+            snex_*
