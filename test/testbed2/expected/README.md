@@ -2,21 +2,23 @@
 
 ## Include snippet1
 
-<!--- insertSnippet: snippet1 -->
+<!-- insertSnippet[snippet1] -->
 start
-	println("snippet1")
+	var lines = []string{"unit", "tested", "code"}
+	for line := range lines {
+		println(line)
+	}
 end
-<!--- /insertSnippet: snippet1 -->
+<!-- /insertSnippet -->
 
 ## Include full file
 
-<!--- insertFile: file1.go -->
+<!-- insertFile[file1.go] -->
 start
 package input
 
 func includeFullFile() {
 	println("file1")
 }
-
 end
-<!--- /insertFile: file1.go -->
+<!-- /insertFile -->
