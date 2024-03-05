@@ -32,7 +32,7 @@ function task_test {
 
     test_return_code 2 ""
     test_return_code 3 "non-existent-folder"
-    test_return_code 4 "--show-default-templates"
+    test_return_code 4 "--show-templates"
 
     rm -rf "${DIR}/test-output/"
     mkdir -p "${DIR}/test-output/"

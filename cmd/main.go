@@ -19,13 +19,13 @@ func main() {
 				Usage: fmt.Sprintf("set custom snippet template to use for replacements, available variables are:\n%s", pkg.TemplateHelp),
 			},
 			&cli.BoolFlag{
-				Name:  "show-default-templates",
+				Name:  "show-templates",
 				Usage: fmt.Sprintf("show default templates for snippet replacing"),
 			},
 		},
 		Action: func(context *cli.Context) error {
 
-			if context.IsSet("show-default-templates") {
+			if context.IsSet("show-templates") {
 				for _, template := range pkg.DefaultSnippetTemplates {
 					log.Infof("template for file extension(s) %s: '%s'", strings.Join(template.Extensions, ", "), strings.ReplaceAll(template.Template, "\n", "\\n"))
 				}
