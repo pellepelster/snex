@@ -2,7 +2,7 @@
 
 # SNippet EXtractor (snex)
 
-snex keep the code snippets inside your documentation in sync with real code from your sources. The issues this solves is that source examples in documentation tend to get outdated very quick. By pulling the snippets directly from a working project you can make sure the source examples used in you docs are always up to date.
+snex keeps the code snippets inside your documentation in sync with real code from your sources. The issue this solves is that source examples in documentation tend to get outdated very quick. By pulling the snippets directly from a working project you can make sure the source examples used in you docs are always up-to-date and functional.
 
 ## Downloads
 
@@ -17,10 +17,30 @@ snex keep the code snippets inside your documentation in sync with real code fro
 * Freebsd (amd64) [snex_freebsd_amd64](https://github.com/pellepelster/snex/releases/latest/download/snex_freebsd_amd64)
 
 ## How it works
-`snex` works line based on text files and iterates through all files inside one or more folders. It searches for snippet start- and end-markers and replaces all content between those markers with the referenced snippet.
 
-<!-- To keep things simple and language agnostic it does not care for comment markers (which differ between languages) and just looks for snippet start- and end-markers. -->
+`snex` works line based on text files and iterates through all files inside of one or more folders, where it searches for snippet start- and end-markers and replaces all content between those markers with the referenced snippet.
 
+Those markers are language agnostic, so you can embed them in a way that the source file is not corrupted by the markers, typically you want to choose comments for that, 
+
+e.g. for Java
+
+```java
+// snippet: snippet1
+```
+
+or inside of HTML
+
+```html
+<!-- snippet: snippet1 -->
+```
+
+There are three types of markers available that must be opened and closed like HTML tags
+
+* `snippet: ${id}` and `/snippet: ${id}` define the beginning and end of a snippet that can be inserted somewhere else
+
+* `insertSnippet: ${id}` and `/insertSnippet: ${id}` define the bounds where the snipped with the id `${id}` will be inserted
+
+* `insertFile: ${file}` and `/insertFile: ${file}` define the bounds where a whole file will be inserted
 
 ### Example 1
 
@@ -88,7 +108,7 @@ println("snippet1")
 package input
 
 func includeFullFile() {
-println("file1")
+    println("file1")
 }
 
 ```
@@ -101,7 +121,7 @@ println("file1")
 
 ### Templates
 
-`snex` has default replacement templates for different well-known files extensions. E.g. replacements inside a `.md` will automatically be surrounded by the markdown code block markers.
+`snex` has default replacement templates for different well-known files extensions. E.g. replacements inside a `.md` will automatically be surrounded by markdown code block markers.
 
 You can override the used template with
 
@@ -114,5 +134,3 @@ To show the list of default templates run
 ```shell
 snex show-templates
 ```
-
-
