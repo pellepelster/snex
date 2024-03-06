@@ -140,6 +140,8 @@ func ReplaceSnippets(documents []ParsedDocument, template string) ([]Document, e
 
 				if snippet.IsInsertSnippet {
 					snippetLines := getSnippetLines(documents, snippet.Id)
+					snippetLines = removeIndentation(snippetLines)
+					
 					renderedLines, err := executeTemplateWithDefault(snippetLines, document.File, template)
 					if err != nil {
 						return nil, err

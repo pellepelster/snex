@@ -384,3 +384,46 @@ ipsum`
 	assert.Equal(t, "target", documents[1].File)
 	assert.Equal(t, targetReplaced, documents[1].Content)
 }
+
+func TestReplaceSnippetsRemoveIndent(t *testing.T) {
+
+	source := `some preface
+snippet[id1]
+	snippet line 1
+		snippet line 2
+	snippet line 3
+/snippet
+more text
+`
+
+	target := `lorem
+insertSnippet[id1]
+some old Content
+/insertSnippet
+ipsum
+`
+
+	targetReplaced := `lorem
+insertSnippet[id1]
+snippet line 1
+	snippet line 2
+snippet line 3
+/insertSnippet
+ipsum
+`
+
+	document1, err := ParseDocument(Document{File: "source", Content: source})
+	assert.NoError(t, err)
+
+	document2, err := ParseDocument(Document{File: "target", Content: target})
+	assert.NoError(t, err)
+
+	documents, err := ReplaceSnippets([]ParsedDocument{document1, document2}, "")
+	assert.NoError(t, err)
+
+	assert.Equal(t, 2, len(documents))
+	assert.Equal(t, "source", documents[0].File)
+	assert.Equal(t, source, documents[0].Content)
+	assert.Equal(t, "target", documents[1].File)
+	assert.Equal(t, targetReplaced, documents[1].Content)
+}

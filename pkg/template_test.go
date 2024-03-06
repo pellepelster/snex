@@ -45,3 +45,19 @@ func TestValidateTemplate(t *testing.T) {
 	err = ValidateTemplate("{{.NotExistingVariable}}")
 	assert.Error(t, err)
 }
+
+func TestRemoveIndentationWhitespaceBlank(t *testing.T) {
+	assert.Equal(t, []string{"one space", " two spaces", "one space", "  three spaces"}, removeIndentation([]string{" one space", "  two spaces", " one space", "   three spaces"}))
+}
+
+func TestRemoveIndentationWhitespaceTab(t *testing.T) {
+	assert.Equal(t, []string{"one tab", "\ttwo tabs", "one tab"}, removeIndentation([]string{"\tone tab", "\t\ttwo tabs", "\tone tab"}))
+}
+
+func TestRemoveIndentationNonWhitespace(t *testing.T) {
+	assert.Equal(t, []string{"aabb", "aabb"}, removeIndentation([]string{"aabb", "aabb"}))
+}
+
+func TestRemoveIndentationSingleLine(t *testing.T) {
+	assert.Equal(t, []string{"one space"}, removeIndentation([]string{" one space"}))
+}

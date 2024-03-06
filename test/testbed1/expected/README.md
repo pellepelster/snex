@@ -4,10 +4,10 @@
 
 <!-- insertSnippet[snippet1] -->
 ```
-	var lines = []string{"unit", "tested", "code"}
-	for line := range lines {
-		println(line)
-	}
+var lines = []string{"unit", "tested", "code"}
+for line := range lines {
+	println(line)
+}
 ```
 
 <!-- /insertSnippet -->

@@ -8,5 +8,5 @@ func TestcaseForCodeSnippet1(t *testing.T) {
 	for line := range lines {
 		println(line)
 	}
-	//  /snippet
+	// /snippet
 }

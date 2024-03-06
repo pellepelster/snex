@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"bytes"
+	"sort"
 	"strings"
 	template2 "text/template"
 )
@@ -58,19 +59,53 @@ func ValidateTemplate(template string) error {
 	return nil
 }
 
-func executeTemplateWithDefault(snippet []string, file string, template string) ([]string, error) {
-
+func executeTemplateWithDefault(lines []string, file string, template string) ([]string, error) {
 	if len(template) > 0 {
-		return executeTemplate(template, snippet, file)
+		return executeTemplate(template, lines, file)
 	}
 
 	for _, template := range DefaultSnippetTemplates {
 		for _, extension := range template.Extensions {
 			if strings.HasSuffix(strings.ToLower(file), extension) {
-				return executeTemplate(template.Template, snippet, file)
+				return executeTemplate(template.Template, lines, file)
 			}
 		}
 	}
 
-	return snippet, nil
+	return lines, nil
+}
+
+func longestCommonPrefix(originalLines []string) string {
+	var longestPrefix = ""
+
+	lines := make([]string, len(originalLines))
+	copy(lines, originalLines)
+
+	if len(lines) > 0 {
+		sort.Strings(lines)
+
+		firstLine := lines[0]
+		lastLine := lines[len(lines)-1]
+
+		for i := 0; i < len(firstLine); i++ {
+
+			if (string(lastLine[i]) == " " || string(lastLine[i]) == "\t") && string(lastLine[i]) == string(firstLine[i]) {
+				longestPrefix += string(lastLine[i])
+			} else {
+				return longestPrefix
+			}
+		}
+	}
+
+	return longestPrefix
+}
+
+func removeIndentation(lines []string) []string {
+	prefix := longestCommonPrefix(lines)
+
+	for index, line := range lines {
+		lines[index] = strings.TrimPrefix(line, prefix)
+	}
+
+	return lines
 }
