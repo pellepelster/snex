@@ -70,7 +70,7 @@ more text`
 
 	errors := ValidateDocuments([]ParsedDocument{document})
 	assert.Equal(t, 1, len(errors))
-	assert.Equal(t, "start marker for snippet 'id1' found more than once", errors[0].Error())
+	assert.Equal(t, "start marker for snippet 'id1' found more than once (file1:2, file1:4)", errors[0].Error())
 }
 
 func TestValidateDocumentsDuplicateSnippetEnd(t *testing.T) {

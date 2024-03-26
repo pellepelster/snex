@@ -141,7 +141,7 @@ func ReplaceSnippets(documents []ParsedDocument, template string) ([]Document, e
 				if snippet.IsInsertSnippet {
 					snippetLines := getSnippetLines(documents, snippet.Id)
 					snippetLines = removeIndentation(snippetLines)
-					
+
 					renderedLines, err := executeTemplateWithDefault(snippetLines, document.File, template)
 					if err != nil {
 						return nil, err
@@ -179,7 +179,7 @@ func ReplaceSnippets(documents []ParsedDocument, template string) ([]Document, e
 func validateSnippetMarkerDuplicates(documents []ParsedDocument) []error {
 	var errors []error
 
-	errors = append(errors, validateDuplicates(documents, "start marker for snippet '%s' found more than once", func(marker *SnippetMarker) bool {
+	errors = append(errors, validateDuplicates(documents, "start marker for snippet '%s' found more than once (%s)", func(marker *SnippetMarker) bool {
 		return marker.IsSnippet && marker.IsStart
 	})...)
 
@@ -226,21 +226,25 @@ func countLines(lines []DocumentLine, predicate func(line DocumentLine) bool) in
 	return count
 }
 
-func collectSnippets(documents []ParsedDocument, predicate SnippetMarkerPredicate) map[string][]DocumentLine {
-	snippets := make(map[string][]DocumentLine)
+type DocumentSnippet struct {
+	line DocumentLine
+	file string
+}
+
+func collectSnippets(documents []ParsedDocument, predicate SnippetMarkerPredicate) map[string][]DocumentSnippet {
+	snippets := make(map[string][]DocumentSnippet)
 
 	for _, document := range documents {
 		for _, line := range document.Lines {
-
 			if line.Snippet != nil {
 				id := line.Snippet.Id
 				if predicate(line.Snippet) {
 
 					val, hasSnippet := snippets[id]
 					if hasSnippet {
-						snippets[id] = append(val, line)
+						snippets[id] = append(val, DocumentSnippet{line, document.File})
 					} else {
-						snippets[id] = []DocumentLine{line}
+						snippets[id] = []DocumentSnippet{{line, document.File}}
 					}
 				}
 			}
@@ -285,11 +289,16 @@ func validateSnippetsMissing(documents []ParsedDocument) []error {
 
 func validateDuplicates(documents []ParsedDocument, message string, predicate SnippetMarkerPredicate) []error {
 
-	snippets := collectSnippets(documents, predicate)
+	collectedSnippets := collectSnippets(documents, predicate)
 
-	for id, lines := range snippets {
-		if len(lines) > 1 {
-			return []error{fmt.Errorf(message, id)}
+	for id, documentSnippets := range collectedSnippets {
+		if len(documentSnippets) > 1 {
+
+			var files []string
+			for _, documentSnippet := range documentSnippets {
+				files = append(files, fmt.Sprintf("%s:%d", documentSnippet.file, documentSnippet.line.number+1))
+			}
+			return []error{fmt.Errorf(message, id, strings.Join(files, ", "))}
 		}
 	}
 

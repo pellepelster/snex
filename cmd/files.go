@@ -10,6 +10,8 @@ import (
 	"unicode/utf8"
 )
 
+var fileHeadBytes int64 = 32
+
 func listAllFiles(rootPath string) []string {
 	var result []string
 
@@ -42,12 +44,6 @@ func listAllFiles(rootPath string) []string {
 // that is, if it is likely that s is human-readable text.
 func isText(s []byte) bool {
 
-	const MAX = 1024 // at least utf8.UTFMax
-
-	if len(s) > MAX {
-		s = s[0:MAX]
-	}
-
 	for i, c := range string(s) {
 		if i+utf8.UTFMax > len(s) {
 			// last char may be incomplete - ignore
@@ -62,7 +58,7 @@ func isText(s []byte) bool {
 	return true
 }
 
-func fileReadHeadBytes(file string, n int) []byte {
+func fileReadHeadBytes(file string, n int64) []byte {
 	xfile, err := os.Open(file)
 
 	if err != nil {
@@ -81,12 +77,26 @@ func fileReadHeadBytes(file string, n int) []byte {
 }
 
 func processFiles(folderOrFiles []string, template string) error {
+
 	var files []string
 	for _, folderOrFile := range folderOrFiles {
 		log.Infof("collecting files from '%s'", folderOrFile)
 
 		for _, file := range append(files, listAllFiles(folderOrFile)...) {
-			headBytes := fileReadHeadBytes(path.Join(file), 1024)
+
+			fileInfo, err := os.Stat(file)
+			if err != nil {
+				log.Infof("could not get infro for file '%s'", folderOrFile)
+				continue
+			}
+
+			if fileInfo.IsDir() {
+				continue
+			}
+			if fileInfo.Size() < fileHeadBytes {
+				continue
+			}
+			headBytes := fileReadHeadBytes(path.Join(file), fileHeadBytes)
 
 			if isText(headBytes) {
 				log.Infof("found text file '%s'", file)
